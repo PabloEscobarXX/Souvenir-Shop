@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 420">
+<rect width="600" height="420" rx="36" fill="#eff6ff"/>
+<path d="M195 150c0-65 44-105 105-105s105 40 105 105" fill="none" stroke="#1e3a8a" stroke-width="20"/>
+<rect x="145" y="130" width="310" height="230" rx="24" fill="#bfdbfe"/>
+<rect x="165" y="150" width="270" height="190" rx="16" fill="#fff"/>
+<circle cx="300" cy="235" r="64" fill="#2563eb"/>
+<path d="M300 180l15 34 36 4-27 24 8 36-32-18-32 18 8-36-27-24 36-4z" fill="#facc15"/>
+<text x="300" y="320" text-anchor="middle" font-family="Arial" font-size="28" font-weight="700" fill="#1e3a8a">PHILIPPINES</text>
+</svg>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 420">
+<rect width="600" height="420" rx="36" fill="#fff1f2"/>
+<path d="M214 90l54-28h64l54 28 80 75-52 57-49-40v170H185V182l-49 40-52-57z" fill="#ffffff" stroke="#e11d48" stroke-width="10"/>
+<text x="300" y="220" text-anchor="middle" font-family="Arial" font-size="48" font-weight="800" fill="#111827">I</text>
+<path d="M300 250c-55-38-78-57-78-90 0-23 18-42 41-42 17 0 30 9 37 22 7-13 20-22 37-22 23 0 41 19 41 42 0 33-23 52-78 90z" fill="#ef4444" transform="scale(.45) translate(366 270)"/>
+<text x="300" y="288" text-anchor="middle" font-family="Arial" font-size="36" font-weight="800" fill="#2563eb">MANILA</text>
+</svg>
