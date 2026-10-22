@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Likha Souvenir POS</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-wrap">
+        <div class="brand-mark">L</div>
+        <div>
+          <h1>Likha Souvenir POS</h1>
+          <p>Local finds • Happy memories</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <div class="date-chip" id="clock">Loading...</div>
+        <button id="inventoryBtn" class="secondary icon-action">📦 Inventory</button>
+        <button id="salesBtn" class="secondary icon-action">📈 Sales</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="products-panel">
+        <div class="hero">
+          <div>
+            <span class="eyebrow">POINT OF SALE</span>
+            <h2>Welcome back! 👋</h2>
+            <p>Choose a souvenir, add it to the cart, and complete the sale in seconds.</p>
+          </div>
+          <div class="hero-art">
+            <div class="floating-card">🇵🇭</div>
+            <div class="floating-card small">✨</div>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <div>
+            <h3>Souvenir Collection</h3>
+            <p id="productCountText">0 products available</p>
+          </div>
+          <div class="search-wrap">
+            <span>⌕</span>
+            <input id="searchInput" type="search" placeholder="Search products..." />
+          </div>
+        </div>
+
+        <div id="categoryFilters" class="filters"></div>
+        <div id="productGrid" class="product-grid"></div>
+      </section>
+
+      <aside class="cart-panel">
+        <div class="cart-heading">
+          <div>
+            <span class="eyebrow">CURRENT ORDER</span>
+            <h2>Shopping Cart</h2>
+          </div>
+          <button id="clearCartBtn" class="clear-btn">Clear</button>
+        </div>
+
+        <div class="cart-counter" id="cartCounter">0 items</div>
+        <div id="cartItems" class="cart-items">
+          <div class="empty-state">
+            <div class="empty-icon">🛍️</div>
+            <strong>Your cart is empty</strong>
+            <span>Add a souvenir to begin a sale.</span>
+          </div>
+        </div>
+
+        <div class="summary-box">
+          <div class="summary-row"><span>Subtotal</span><strong id="subtotal">₱0.00</strong></div>
+          <div class="summary-row discount-line">
+            <span>Discount</span>
+            <div class="discount-row">
+              <input id="discountInput" type="number" min="0" step="1" value="0" />
+              <select id="discountType">
+                <option value="fixed">₱</option>
+                <option value="percent">%</option>
+              </select>
+            </div>
+          </div>
+          <div class="summary-row grand-total"><span>Total</span><strong id="total">₱0.00</strong></div>
+        </div>
+
+        <div class="payment-box">
+          <label>Payment Method</label>
+          <div class="payment-methods">
+            <button class="pay-method active" data-method="Cash">💵 Cash</button>
+            <button class="pay-method" data-method="GCash">📱 GCash</button>
+            <button class="pay-method" data-method="Maya">🟢 Maya</button>
+            <button class="pay-method" data-method="Card">💳 Card</button>
+          </div>
+          <select id="paymentMethod" class="hidden-select">
+            <option value="Cash">Cash</option>
+            <option value="GCash">GCash</option>
+            <option value="Maya">Maya</option>
+            <option value="Card">Card</option>
+          </select>
+
+          <div id="cashBlock">
+            <label for="cashInput">Cash Received</label>
+            <div class="money-input"><span>₱</span><input id="cashInput" type="number" min="0" step="0.01" placeholder="0.00" /></div>
+            <div class="change-card"><span>Change</span><strong id="change">₱0.00</strong></div>
+          </div>
+
+          <button id="checkoutBtn" class="checkout-btn">Complete Sale <span>→</span></button>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <div id="toast" class="toast hidden">Added to cart</div>
+
+  <div id="inventoryModal" class="modal hidden">
+    <div class="modal-card large">
+      <div class="modal-header">
+        <div><span class="eyebrow">STORE MANAGEMENT</span><h2>Inventory</h2></div>
+        <button class="icon-btn" data-close="inventoryModal">✕</button>
+      </div>
+
+      <form id="productForm" class="product-form">
+        <input type="hidden" id="productId" />
+        <div><label>Product Name</label><input id="productName" required placeholder="e.g. Manila Mug" /></div>
+        <div><label>Category</label><input id="productCategory" required placeholder="e.g. Mugs" /></div>
+        <div><label>Price</label><input id="productPrice" type="number" required min="0" step="0.01" placeholder="0.00" /></div>
+        <div><label>Stock</label><input id="productStock" type="number" required min="0" step="1" placeholder="0" /></div>
+        <div class="form-actions">
+          <button class="primary" type="submit">Save Product</button>
+          <button class="secondary" type="button" id="resetProductForm">Reset</button>
+        </div>
+      </form>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead>
+          <tbody id="inventoryTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="salesModal" class="modal hidden">
+    <div class="modal-card large">
+      <div class="modal-header">
+        <div><span class="eyebrow">PERFORMANCE</span><h2>Sales History</h2></div>
+        <button class="icon-btn" data-close="salesModal">✕</button>
+      </div>
+
+      <div class="sales-summary">
+        <div class="summary-card"><span>Total Transactions</span><strong id="salesCount">0</strong><small>Completed sales</small></div>
+        <div class="summary-card"><span>Total Revenue</span><strong id="salesRevenue">₱0.00</strong><small>All-time revenue</small></div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Receipt</th><th>Date</th><th>Items</th><th>Payment</th><th>Total</th><th></th></tr></thead>
+          <tbody id="salesTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="receiptModal" class="modal hidden">
+    <div class="modal-card receipt-card">
+      <div class="modal-header no-print">
+        <div><span class="eyebrow">TRANSACTION COMPLETE</span><h2>Receipt</h2></div>
+        <button class="icon-btn" data-close="receiptModal">✕</button>
+      </div>
+      <div id="receiptContent"></div>
+      <button id="printReceiptBtn" class="checkout-btn no-print">Print Receipt 🖨️</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
