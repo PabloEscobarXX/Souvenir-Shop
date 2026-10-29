@@ -1,4 +1,4 @@
-# Likha Souvenir POS
+# PUP Souvenir Shop
 
 Creative browser-based point-of-sale system for a souvenir shop.
 
@@ -14,6 +14,8 @@ Creative browser-based point-of-sale system for a souvenir shop.
 - Fixed or percentage discounts
 - Sales history
 - Printable receipt
+- Role-based prototype entry for Souvenir Shop and RGO
+- RGO daily/monthly sales reporting and read-only inventory
 - Offline browser storage using localStorage
 
 ## Run in VS Code
@@ -29,3 +31,6 @@ The app does not require internet access.
 
 Data is saved only in the current browser using localStorage. For a real business deployment,
 use a database/backend such as Firebase, Supabase, MySQL, PostgreSQL, or SQLite.
+The role selection is a UI prototype, not secure authentication or authorization. Anyone with
+access to this browser can change roles or modify local data; production access control must be
+enforced by a backend.
