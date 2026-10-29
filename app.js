@@ -149,7 +149,7 @@ function renderSales(){
   document.querySelectorAll("[data-receipt]").forEach(b=>b.onclick=()=>{const s=state.sales.find(x=>x.id===b.dataset.receipt);if(s)showReceipt(s)});
 }
 function showReceipt(sale){
-  els.receiptContent.innerHTML=`<div class="receipt"><h2>LIKHA SOUVENIR SHOP</h2><p>Memories made local 🇵🇭</p><hr>
+  els.receiptContent.innerHTML=`<div class="receipt"><h2>PUP SOUVENIR SHOP</h2><p>Memories made local 🇵🇭</p><hr>
   <div class="receipt-row"><span>Receipt</span><span>${sale.id}</span></div><div class="receipt-row"><span>Date</span><span>${new Date(sale.date).toLocaleString("en-PH")}</span></div><div class="receipt-row"><span>Payment</span><span>${sale.paymentMethod}</span></div><hr>
   ${sale.items.map(i=>`<div class="receipt-item"><div>${escapeHtml(i.name)}</div><small><span>${i.qty} × ${peso.format(i.price)}</span><span>${peso.format(i.lineTotal)}</span></small></div>`).join("")}<hr>
   <div class="receipt-row"><span>Subtotal</span><span>${peso.format(sale.subtotal)}</span></div><div class="receipt-row"><span>Discount</span><span>${peso.format(sale.discount)}</span></div><div class="receipt-row"><strong>TOTAL</strong><strong>${peso.format(sale.total)}</strong></div><div class="receipt-row"><span>Paid</span><span>${peso.format(sale.cashReceived)}</span></div><div class="receipt-row"><span>Change</span><span>${peso.format(sale.change)}</span></div><hr><p>Salamat! Please come again.</p></div>`;
