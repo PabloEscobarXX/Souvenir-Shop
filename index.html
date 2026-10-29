@@ -7,7 +7,29 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="app-shell">
+  <section id="loginScreen" class="login-screen">
+    <div class="login-card">
+      <div class="brand-mark">L</div>
+      <span class="eyebrow">LIKHA SOUVENIR POS</span>
+      <h1>Welcome</h1>
+      <p>Choose your workspace to continue.</p>
+      <div class="login-roles">
+        <button class="login-role" data-login-role="souvenir">
+          <span class="login-role-icon">🛍️</span>
+          <span><strong>Souvenir Shop</strong><small>Point of sale and store management</small></span>
+          <span aria-hidden="true">→</span>
+        </button>
+        <button class="login-role" data-login-role="rgo">
+          <span class="login-role-icon">📊</span>
+          <span><strong>RGO · Resource Generating Office</strong><small>Daily/monthly sales and read-only inventory</small></span>
+          <span aria-hidden="true">→</span>
+        </button>
+      </div>
+      <p class="prototype-note">Prototype access only. This role selection does not verify a password.</p>
+    </div>
+  </section>
+
+  <div class="app-shell hidden" id="appShell">
     <header class="topbar">
       <div class="brand-wrap">
         <div class="brand-mark">L</div>
@@ -18,12 +40,26 @@
       </div>
       <div class="top-actions">
         <div class="date-chip" id="clock">Loading...</div>
+        <span class="role-badge" id="roleBadge"></span>
         <button id="inventoryBtn" class="secondary icon-action">📦 Inventory</button>
         <button id="salesBtn" class="secondary icon-action">📈 Sales</button>
+        <button id="logoutBtn" class="secondary icon-action">Log out</button>
       </div>
     </header>
 
-    <main class="layout">
+    <main id="rgoDashboard" class="rgo-dashboard hidden">
+      <div class="rgo-welcome">
+        <span class="eyebrow">RESOURCE GENERATING OFFICE</span>
+        <h2>Sales &amp; Inventory Overview</h2>
+        <p>Review daily or monthly sales and view current inventory. Inventory changes are managed by the Souvenir Shop.</p>
+        <div class="rgo-actions">
+          <button class="primary" id="rgoSalesBtn">📈 View sales report</button>
+          <button class="secondary" id="rgoInventoryBtn">📦 View inventory</button>
+        </div>
+      </div>
+    </main>
+
+    <main class="layout" id="posLayout">
       <section class="products-panel">
         <div class="hero">
           <div>
@@ -135,7 +171,7 @@
 
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th id="inventoryActionsHeader">Actions</th></tr></thead>
           <tbody id="inventoryTable"></tbody>
         </table>
       </div>
@@ -149,9 +185,21 @@
         <button class="icon-btn" data-close="salesModal">✕</button>
       </div>
 
+      <div id="rgoSalesPeriod" class="sales-period hidden">
+        <label for="salesPeriod">Report period</label>
+        <select id="salesPeriod">
+          <option value="daily">Daily</option>
+          <option value="monthly">Monthly</option>
+        </select>
+        <label id="salesReportDateLabel" for="salesReportDate">Date</label>
+        <input id="salesReportDate" type="date" />
+        <label id="salesReportMonthLabel" for="salesReportMonth" class="hidden">Month</label>
+        <input id="salesReportMonth" type="month" class="hidden" />
+      </div>
+
       <div class="sales-summary">
-        <div class="summary-card"><span>Total Transactions</span><strong id="salesCount">0</strong><small>Completed sales</small></div>
-        <div class="summary-card"><span>Total Revenue</span><strong id="salesRevenue">₱0.00</strong><small>All-time revenue</small></div>
+        <div class="summary-card"><span>Total Transactions</span><strong id="salesCount">0</strong><small id="salesCountCaption">Completed sales</small></div>
+        <div class="summary-card"><span>Total Revenue</span><strong id="salesRevenue">₱0.00</strong><small id="salesRevenueCaption">All-time revenue</small></div>
       </div>
 
       <div class="table-wrap">
