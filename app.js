@@ -16,7 +16,8 @@ const state = {
   sales: JSON.parse(localStorage.getItem("likha_pos_sales")) || [],
   cart: [],
   category: "All",
-  search: ""
+  search: "",
+  role: sessionStorage.getItem("likha_pos_role")
 };
 
 const peso = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" });
@@ -99,6 +100,7 @@ function updateChange(){
 }
 function clearCart(){state.cart=[];els.discountInput.value=0;els.cashInput.value="";renderCart()}
 function checkout(){
+  if(state.role!=="souvenir")return;
   const items=getCartDetails(); if(!items.length){alert("Cart is empty.");return}
   const {subtotal,discount,total}=getTotals(),method=els.paymentMethod.value,cash=Number(els.cashInput.value)||0;
   if(method==="Cash"&&cash<total){alert("Cash received is not enough.");return}
@@ -108,24 +110,42 @@ function checkout(){
   state.sales.unshift(sale);saveData();clearCart();renderProducts();renderInventory();renderSales();showReceipt(sale);
 }
 function renderInventory(){
-  if(!state.products.length){els.inventoryTable.innerHTML=`<tr><td colspan="5">No products.</td></tr>`;return}
-  els.inventoryTable.innerHTML=state.products.map(p=>`<tr><td>${escapeHtml(p.name)}</td><td>${escapeHtml(p.category)}</td><td>${peso.format(p.price)}</td><td>${p.stock}</td><td><button class="small-btn" data-edit="${p.id}">Edit</button> <button class="small-btn danger-text" data-delete="${p.id}">Delete</button></td></tr>`).join("");
-  document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>editProduct(b.dataset.edit)); document.querySelectorAll("[data-delete]").forEach(b=>b.onclick=()=>deleteProduct(b.dataset.delete));
+  const canEdit=state.role==="souvenir";
+  $("productForm").classList.toggle("hidden",!canEdit);
+  $("inventoryActionsHeader").classList.toggle("hidden",!canEdit);
+  if(!state.products.length){els.inventoryTable.innerHTML=`<tr><td colspan="${canEdit?5:4}">No products.</td></tr>`;return}
+  els.inventoryTable.innerHTML=state.products.map(p=>`<tr><td>${escapeHtml(p.name)}</td><td>${escapeHtml(p.category)}</td><td>${peso.format(p.price)}</td><td>${p.stock}</td>${canEdit?`<td><button class="small-btn" data-edit="${p.id}">Edit</button> <button class="small-btn danger-text" data-delete="${p.id}">Delete</button></td>`:""}</tr>`).join("");
+  if(canEdit){
+    document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>editProduct(b.dataset.edit));
+    document.querySelectorAll("[data-delete]").forEach(b=>b.onclick=()=>deleteProduct(b.dataset.delete));
+  }
 }
-function editProduct(id){const p=state.products.find(x=>x.id===id);if(!p)return;$("productId").value=p.id;$("productName").value=p.name;$("productCategory").value=p.category;$("productPrice").value=p.price;$("productStock").value=p.stock}
+function editProduct(id){if(state.role!=="souvenir")return;const p=state.products.find(x=>x.id===id);if(!p)return;$("productId").value=p.id;$("productName").value=p.name;$("productCategory").value=p.category;$("productPrice").value=p.price;$("productStock").value=p.stock}
 function resetProductForm(){$("productForm").reset();$("productId").value=""}
 function saveProduct(e){
-  e.preventDefault(); const id=$("productId").value,name=$("productName").value.trim(),category=$("productCategory").value.trim(),price=Number($("productPrice").value),stock=Number($("productStock").value);
+  e.preventDefault(); if(state.role!=="souvenir")return; const id=$("productId").value,name=$("productName").value.trim(),category=$("productCategory").value.trim(),price=Number($("productPrice").value),stock=Number($("productStock").value);
   if(!name||!category||price<0||stock<0)return;
   if(id){const p=state.products.find(x=>x.id===id);if(p)Object.assign(p,{name,category,price,stock})}
   else state.products.push({id:crypto.randomUUID(),name,category,price,stock,image:fallbackImages[state.products.length%fallbackImages.length]});
   saveData();resetProductForm();renderCategories();renderProducts();renderInventory();showToast("Product saved");
 }
-function deleteProduct(id){const p=state.products.find(x=>x.id===id);if(!p||!confirm(`Delete "${p.name}"?`))return;state.products=state.products.filter(x=>x.id!==id);state.cart=state.cart.filter(x=>x.productId!==id);saveData();renderCategories();renderProducts();renderInventory();renderCart()}
+function deleteProduct(id){if(state.role!=="souvenir")return;const p=state.products.find(x=>x.id===id);if(!p||!confirm(`Delete "${p.name}"?`))return;state.products=state.products.filter(x=>x.id!==id);state.cart=state.cart.filter(x=>x.productId!==id);saveData();renderCategories();renderProducts();renderInventory();renderCart()}
+function dateKey(date){return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`}
+function getVisibleSales(){
+  if(state.role!=="rgo")return state.sales;
+  const period=$("salesPeriod").value,selectedPeriod=period==="monthly"?$("salesReportMonth").value:$("salesReportDate").value;
+  return state.sales.filter(sale=>{
+    const saleDate=dateKey(new Date(sale.date));
+    return period==="monthly"?saleDate.slice(0,7)===selectedPeriod:saleDate===selectedPeriod;
+  });
+}
 function renderSales(){
-  els.salesCount.textContent=state.sales.length;els.salesRevenue.textContent=peso.format(state.sales.reduce((s,x)=>s+x.total,0));
-  if(!state.sales.length){els.salesTable.innerHTML=`<tr><td colspan="6">No sales yet.</td></tr>`;return}
-  els.salesTable.innerHTML=state.sales.map(s=>`<tr><td>${s.id}</td><td>${new Date(s.date).toLocaleString("en-PH")}</td><td>${s.items.reduce((a,b)=>a+b.qty,0)}</td><td>${s.paymentMethod}</td><td>${peso.format(s.total)}</td><td><button class="small-btn" data-receipt="${s.id}">View</button></td></tr>`).join("");
+  const visibleSales=getVisibleSales(),isRgo=state.role==="rgo",period=$("salesPeriod").value;
+  els.salesCount.textContent=visibleSales.length;els.salesRevenue.textContent=peso.format(visibleSales.reduce((s,x)=>s+x.total,0));
+  $("salesCountCaption").textContent=isRgo?`Selected ${period==="daily"?"day's":"month's"} completed sales`:"Completed sales";
+  $("salesRevenueCaption").textContent=isRgo?`Selected ${period==="daily"?"day's":"month's"} revenue`:"All-time revenue";
+  if(!visibleSales.length){els.salesTable.innerHTML=`<tr><td colspan="6">${isRgo?"No sales for this period.":"No sales yet."}</td></tr>`;return}
+  els.salesTable.innerHTML=visibleSales.map(s=>`<tr><td>${s.id}</td><td>${new Date(s.date).toLocaleString("en-PH")}</td><td>${s.items.reduce((a,b)=>a+b.qty,0)}</td><td>${s.paymentMethod}</td><td>${peso.format(s.total)}</td><td><button class="small-btn" data-receipt="${s.id}">View</button></td></tr>`).join("");
   document.querySelectorAll("[data-receipt]").forEach(b=>b.onclick=()=>{const s=state.sales.find(x=>x.id===b.dataset.receipt);if(s)showReceipt(s)});
 }
 function showReceipt(sale){
@@ -141,6 +161,36 @@ els.searchInput.oninput=e=>{state.search=e.target.value;renderProducts()}; els.d
 document.querySelectorAll(".pay-method").forEach(btn=>btn.onclick=()=>{document.querySelectorAll(".pay-method").forEach(x=>x.classList.remove("active"));btn.classList.add("active");els.paymentMethod.value=btn.dataset.method;updateChange()});
 $("clearCartBtn").onclick=clearCart;$("checkoutBtn").onclick=checkout;$("inventoryBtn").onclick=()=>{renderInventory();openModal("inventoryModal")};$("salesBtn").onclick=()=>{renderSales();openModal("salesModal")};
 $("productForm").onsubmit=saveProduct;$("resetProductForm").onclick=resetProductForm;$("printReceiptBtn").onclick=()=>window.print();
+function updateSalesPeriodControls(){
+  const monthly=$("salesPeriod").value==="monthly";
+  $("salesReportDate").classList.toggle("hidden",monthly);
+  $("salesReportDateLabel").classList.toggle("hidden",monthly);
+  $("salesReportMonth").classList.toggle("hidden",!monthly);
+  $("salesReportMonthLabel").classList.toggle("hidden",!monthly);
+  renderSales();
+}
+$("salesPeriod").onchange=updateSalesPeriodControls;
+$("salesReportDate").onchange=renderSales;$("salesReportMonth").onchange=renderSales;
+function applyRole(role){
+  if(role!=="souvenir"&&role!=="rgo"){state.role=null;sessionStorage.removeItem("likha_pos_role");$("appShell").classList.add("hidden");$("loginScreen").classList.remove("hidden");return}
+  state.role=role;sessionStorage.setItem("likha_pos_role",role);
+  $("loginScreen").classList.add("hidden");$("appShell").classList.remove("hidden");
+  $("roleBadge").textContent=role==="rgo"?"RGO · Read only":"Souvenir Shop";
+  $("posLayout").classList.toggle("hidden",role==="rgo");
+  $("rgoDashboard").classList.toggle("hidden",role!=="rgo");
+  $("rgoSalesPeriod").classList.toggle("hidden",role!=="rgo");
+  $("salesPeriod").value="daily";
+  const today=dateKey(new Date());
+  $("salesReportDate").value=today;
+  $("salesReportMonth").value=today.slice(0,7);
+  updateSalesPeriodControls();
+  renderInventory();
+}
+document.querySelectorAll("[data-login-role]").forEach(button=>button.onclick=()=>applyRole(button.dataset.loginRole));
+$("logoutBtn").onclick=()=>applyRole(null);
+$("rgoSalesBtn").onclick=$("salesBtn").onclick;
+$("rgoInventoryBtn").onclick=$("inventoryBtn").onclick;
 document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>closeModal(b.dataset.close));document.querySelectorAll(".modal").forEach(m=>m.onclick=e=>{if(e.target===m)closeModal(m.id)});
 function updateClock(){els.clock.textContent=new Date().toLocaleString("en-PH",{dateStyle:"medium",timeStyle:"short"})}setInterval(updateClock,1000);updateClock();
 saveData();renderCategories();renderProducts();renderCart();renderInventory();renderSales();
+applyRole(state.role);
