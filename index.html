@@ -9,23 +9,31 @@
 <body>
   <section id="loginScreen" class="login-screen">
     <div class="login-card">
-      <div class="brand-mark">L</div>
-      <span class="eyebrow">PUP SOUVENIR SHOP</span>
-      <h1>Welcome</h1>
-      <p>Choose your workspace to continue.</p>
-      <div class="login-roles">
-        <button class="login-role" data-login-role="souvenir">
-          <span class="login-role-icon">🛍️</span>
-          <span><strong>Souvenir Shop</strong><small>Point of sale and store management</small></span>
-          <span aria-hidden="true">→</span>
-        </button>
-        <button class="login-role" data-login-role="rgo">
-          <span class="login-role-icon">📊</span>
-          <span><strong>RGO · Resource Generating Office</strong><small>Daily/monthly sales and read-only inventory</small></span>
-          <span aria-hidden="true">→</span>
-        </button>
+      <div class="login-heading">
+        <h1 id="authTitle">Log in</h1>
+        <p id="authSubtitle">Welcome back.</p>
       </div>
-      <p class="prototype-note">Prototype access only. This role selection does not verify a password.</p>
+      <div class="login-tabs" role="group" aria-label="Login options">
+        <button class="login-tab active" type="button" data-auth-tab="login" aria-pressed="true">Log in</button>
+        <button class="login-tab" type="button" data-auth-tab="signup" aria-pressed="false">Sign up</button>
+        <button class="login-tab" type="button" data-auth-tab="vendor" aria-pressed="false">Vendor</button>
+        <button class="login-tab" type="button" data-auth-tab="admin" aria-pressed="false">Admin</button>
+      </div>
+      <form id="loginForm" class="login-form" novalidate>
+        <div id="loginRoleHint" class="login-role-hint">Vendor account</div>
+        <label for="loginUsername">Email or username</label>
+        <input id="loginUsername" name="username" type="text" autocomplete="username" placeholder="Enter your email or username" required />
+        <label for="loginPassword">Password</label>
+        <input id="loginPassword" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required />
+        <div id="confirmPasswordField" class="login-confirm-field hidden">
+          <label for="confirmPassword">Confirm password</label>
+          <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" placeholder="Confirm your password" />
+        </div>
+        <p id="loginError" class="login-error hidden" role="alert"></p>
+        <button id="loginSubmit" class="login-submit" type="submit">Log in <span aria-hidden="true">→</span></button>
+        <small id="demoCredentials" class="credential-note">Demo: shopowner / owner123</small>
+      </form>
+      <p class="prototype-note">Demo access only. For real accounts, use secure authentication on a backend.</p>
     </div>
   </section>
 
@@ -34,8 +42,8 @@
       <div class="brand-wrap">
         <div class="brand-mark">L</div>
         <div>
-          <h1>PUP Souvenir Shop</h1>
-          <p>Local finds • Happy memories</p>
+          <h1 id="appBrandTitle">PUP Souvenir Shop</h1>
+          <p id="appBrandSubtitle">Local finds • Happy memories</p>
         </div>
       </div>
       <div class="top-actions">
@@ -50,12 +58,67 @@
     <main id="rgoDashboard" class="rgo-dashboard hidden">
       <div class="rgo-welcome">
         <span class="eyebrow">RESOURCE GENERATING OFFICE</span>
-        <h2>Sales &amp; Inventory Overview</h2>
-        <p>Review daily or monthly sales and view current inventory. Inventory changes are managed by the Souvenir Shop.</p>
-        <div class="rgo-actions">
-          <button class="primary" id="rgoSalesBtn">📈 View sales report</button>
-          <button class="secondary" id="rgoInventoryBtn">📦 View inventory</button>
+        <h2 id="shopOverviewTitle">Consolidated Reports Overview</h2>
+        <p>Review daily sales, current inventory, financial summaries, and transaction receipts by shop or across all registered shops.</p>
+        <div class="shop-selector">
+          <label for="shopSelect">Select a shop</label>
+          <select id="shopSelect"></select>
         </div>
+        <div class="report-date-control">
+          <label for="rgoReportDate">Daily report date</label>
+          <input id="rgoReportDate" type="date" />
+        </div>
+        <div class="rgo-actions">
+          <button class="primary" id="rgoSalesBtn">📈 Daily sales report</button>
+          <button class="secondary" id="rgoInventoryBtn">📦 Inventory report</button>
+        </div>
+        <section class="rgo-report-overview" aria-label="Shop reports overview">
+          <div class="rgo-report-metrics">
+            <article class="rgo-metric"><span>Registered shops</span><strong id="reportShopCount">0</strong><small>Shops included</small></article>
+            <article class="rgo-metric"><span>Daily transactions</span><strong id="reportSaleCount">0</strong><small id="reportSaleDateCaption">Selected date</small></article>
+            <article class="rgo-metric"><span>Daily net sales</span><strong id="reportNetSales">₱0.00</strong><small>After discounts</small></article>
+            <article class="rgo-metric"><span>Inventory units</span><strong id="reportInventoryUnits">0</strong><small id="reportInventoryValue">₱0.00 inventory value</small></article>
+          </div>
+
+          <section class="rgo-report-section">
+            <h3>Daily sales report</h3>
+            <div class="table-wrap"><table>
+              <thead><tr><th>Shop</th><th>Transactions</th><th>Gross sales</th><th>Discounts</th><th>Net sales</th></tr></thead>
+              <tbody id="dailySalesReport"></tbody>
+            </table></div>
+          </section>
+
+          <section class="rgo-report-section">
+            <div class="rgo-report-section-heading">
+              <h3>Inventory report</h3>
+              <button class="secondary rgo-report-download" id="downloadInventoryReport" type="button">Download CSV</button>
+            </div>
+            <div class="table-wrap"><table>
+              <thead><tr><th>Shop</th><th>Product</th><th>Category</th><th>Stock quantity</th><th>Units sold (selected date)</th><th>Unit price</th><th>Stock value</th></tr></thead>
+              <tbody id="shopInventoryReport"></tbody>
+            </table></div>
+          </section>
+
+          <section class="rgo-report-section">
+            <div class="rgo-report-section-heading">
+              <h3>Financial report</h3>
+              <button class="secondary rgo-report-download" id="downloadFinancialReport" type="button">Download CSV</button>
+            </div>
+            <div class="table-wrap"><table>
+              <thead><tr><th>Shop</th><th>Gross sales</th><th>Discounts</th><th>Net sales</th><th>Transactions</th></tr></thead>
+              <tbody id="shopFinancialReport"></tbody>
+            </table></div>
+          </section>
+
+          <section class="rgo-report-section">
+            <h3>Supporting documents</h3>
+            <p class="report-help">Transaction receipts for the selected date are available here as supporting sales documents.</p>
+            <div class="table-wrap"><table>
+              <thead><tr><th>Shop</th><th>Receipt</th><th>Date</th><th>Payment</th><th>Total</th><th></th></tr></thead>
+              <tbody id="supportingDocumentsReport"></tbody>
+            </table></div>
+          </section>
+        </section>
       </div>
     </main>
 
@@ -146,6 +209,34 @@
         </div>
       </aside>
     </main>
+  </div>
+
+  <div id="notificationModal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div><span class="eyebrow">RESOURCE GENERATION OFFICE</span><h2>Notifications</h2></div>
+        <button class="icon-btn" data-close="notificationModal">✕</button>
+      </div>
+      <div id="notificationList" class="notification-list"></div>
+    </div>
+  </div>
+
+  <div id="addShopModal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div><span class="eyebrow">RESOURCE GENERATION OFFICE</span><h2>Add another shop</h2></div>
+        <button class="icon-btn" data-close="addShopModal" type="button">✕</button>
+      </div>
+      <form id="addShopForm" class="add-shop-form">
+        <label for="newShopName">Shop name</label>
+        <input id="newShopName" name="shopName" required maxlength="60" placeholder="e.g. Campus Bookstore" />
+        <p id="addShopError" class="login-error hidden" role="alert"></p>
+        <div class="form-actions">
+          <button class="primary" type="submit">Add shop</button>
+          <button class="secondary" type="button" data-close="addShopModal">Cancel</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <div id="toast" class="toast hidden">Added to cart</div>
