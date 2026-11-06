@@ -11,14 +11,43 @@ const DEFAULT_PRODUCTS = [
 
 const fallbackImages = ["assets/magnet.svg","assets/keychain.svg","assets/jeepney.svg","assets/shirt.svg","assets/purse.svg","assets/carabao.svg","assets/tote.svg","assets/postcard.svg"];
 
+const SHOPS_STORAGE_KEY = "likha_pos_shops";
+const legacyProducts = JSON.parse(localStorage.getItem("likha_pos_products") || "null") || DEFAULT_PRODUCTS;
+const legacySales = JSON.parse(localStorage.getItem("likha_pos_sales") || "null") || [];
+const savedShops = JSON.parse(localStorage.getItem(SHOPS_STORAGE_KEY) || "null");
+const shops = Array.isArray(savedShops) && savedShops.length
+  ? savedShops.map(shop=>({...shop,products:Array.isArray(shop.products)?shop.products:[],sales:Array.isArray(shop.sales)?shop.sales:[]}))
+  : [{id:"pup-souvenir-shop",name:"PUP Souvenir Shop",products:legacyProducts,sales:legacySales}];
+const storedShopId = localStorage.getItem("likha_pos_selected_shop");
 const state = {
-  products: JSON.parse(localStorage.getItem("likha_pos_products")) || DEFAULT_PRODUCTS,
-  sales: JSON.parse(localStorage.getItem("likha_pos_sales")) || [],
+  shops,
+  selectedShopId:shops.some(shop=>shop.id===storedShopId)?storedShopId:shops[0].id,
+  reportShopId:"__all_shops__",
   cart: [],
   category: "All",
   search: "",
-  role: sessionStorage.getItem("likha_pos_role")
+  role: null,
+  get currentShop(){return this.shops.find(shop=>shop.id===this.selectedShopId)||this.shops[0]},
+  get products(){return this.currentShop.products},
+  set products(products){this.currentShop.products=products},
+  get sales(){return this.currentShop.sales},
+  set sales(sales){this.currentShop.sales=sales}
 };
+
+const LOGIN_CREDENTIALS = {
+  souvenir: { username: "shopowner", password: "owner123" },
+  rgo: { username: "admin", password: "admin123" }
+};
+const ACCOUNTS_STORAGE_KEY = "likha_pos_accounts";
+const DEFAULT_ACCOUNTS = [
+  { role: "souvenir", username: LOGIN_CREDENTIALS.souvenir.username, password: LOGIN_CREDENTIALS.souvenir.password },
+  { role: "rgo", username: LOGIN_CREDENTIALS.rgo.username, password: LOGIN_CREDENTIALS.rgo.password }
+];
+const savedAccounts = JSON.parse(localStorage.getItem(ACCOUNTS_STORAGE_KEY) || "null");
+const accounts = Array.isArray(savedAccounts) ? savedAccounts : DEFAULT_ACCOUNTS;
+let authMode = "login";
+let selectedAuthRole = "souvenir";
+let activeAuthTab = "login";
 
 const peso = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" });
 const $ = id => document.getElementById(id);
@@ -34,7 +63,14 @@ const els = {
 };
 
 function escapeHtml(text){return String(text).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
-function saveData(){localStorage.setItem("likha_pos_products",JSON.stringify(state.products));localStorage.setItem("likha_pos_sales",JSON.stringify(state.sales))}
+function saveData(){
+  localStorage.setItem(SHOPS_STORAGE_KEY,JSON.stringify(state.shops));
+  localStorage.setItem("likha_pos_selected_shop",state.selectedShopId);
+  if(state.currentShop.id==="pup-souvenir-shop"){
+    localStorage.setItem("likha_pos_products",JSON.stringify(state.products));
+    localStorage.setItem("likha_pos_sales",JSON.stringify(state.sales));
+  }
+}
 function getCategories(){return ["All",...new Set(state.products.map(p=>p.category))]}
 
 function showToast(message){
@@ -159,7 +195,7 @@ function openModal(id){$(id).classList.remove("hidden")} function closeModal(id)
 
 els.searchInput.oninput=e=>{state.search=e.target.value;renderProducts()}; els.discountInput.oninput=renderCart; els.discountType.onchange=renderCart; els.cashInput.oninput=updateChange;
 document.querySelectorAll(".pay-method").forEach(btn=>btn.onclick=()=>{document.querySelectorAll(".pay-method").forEach(x=>x.classList.remove("active"));btn.classList.add("active");els.paymentMethod.value=btn.dataset.method;updateChange()});
-$("clearCartBtn").onclick=clearCart;$("checkoutBtn").onclick=checkout;$("inventoryBtn").onclick=()=>{renderInventory();openModal("inventoryModal")};$("salesBtn").onclick=()=>{renderSales();openModal("salesModal")};
+$("clearCartBtn").onclick=clearCart;$("checkoutBtn").onclick=checkout;$("inventoryBtn").onclick=()=>{renderInventory();openModal("inventoryModal")};$("salesBtn").onclick=()=>{if(state.role==="rgo"){renderNotifications();openModal("notificationModal")}else{renderSales();openModal("salesModal")}};
 $("productForm").onsubmit=saveProduct;$("resetProductForm").onclick=resetProductForm;$("printReceiptBtn").onclick=()=>window.print();
 function updateSalesPeriodControls(){
   const monthly=$("salesPeriod").value==="monthly";
@@ -171,14 +207,37 @@ function updateSalesPeriodControls(){
 }
 $("salesPeriod").onchange=updateSalesPeriodControls;
 $("salesReportDate").onchange=renderSales;$("salesReportMonth").onchange=renderSales;
+function login(event,role){
+  event.preventDefault();
+  const form=event.currentTarget,username=form.elements.username.value.trim().toLowerCase(),password=form.elements.password.value;
+  const credentials=LOGIN_CREDENTIALS[role],error=form.querySelector(".login-error");
+  if(username!==credentials.username||password!==credentials.password){
+    error.textContent="Incorrect username or password. Please try again.";
+    error.classList.remove("hidden");
+    form.elements.password.value="";
+    form.elements.password.focus();
+    return;
+  }
+  error.textContent="";
+  error.classList.add("hidden");
+  form.elements.username.value="";
+  form.elements.password.value="";
+  applyRole(role);
+}
 function applyRole(role){
-  if(role!=="souvenir"&&role!=="rgo"){state.role=null;sessionStorage.removeItem("likha_pos_role");$("appShell").classList.add("hidden");$("loginScreen").classList.remove("hidden");return}
-  state.role=role;sessionStorage.setItem("likha_pos_role",role);
+  if(role!=="souvenir"&&role!=="rgo"){state.role=null;$("appShell").classList.add("hidden");$("loginScreen").classList.remove("hidden");return}
+  state.role=role;
   $("loginScreen").classList.add("hidden");$("appShell").classList.remove("hidden");
-  $("roleBadge").textContent=role==="rgo"?"RGO · Read only":"Souvenir Shop";
-  $("posLayout").classList.toggle("hidden",role==="rgo");
-  $("rgoDashboard").classList.toggle("hidden",role!=="rgo");
-  $("rgoSalesPeriod").classList.toggle("hidden",role!=="rgo");
+  const isRgo=role==="rgo";
+  $("appBrandTitle").textContent=isRgo?"PUP Resource Generation Office":state.currentShop.name;
+  $("appBrandSubtitle").textContent=isRgo?"Likha | Sales and Inventory Monitoring":state.currentShop.id==="pup-souvenir-shop"?"Local finds • Happy memories":"Shop Owner | Point of Sale and Store Management";
+  $("clock").classList.toggle("hidden",isRgo);
+  $("inventoryBtn").classList.toggle("hidden",isRgo);
+  $("salesBtn").textContent=isRgo?"🔔 Notification":"📈 Sales";
+  $("roleBadge").textContent=role==="rgo"?"RGO · Read only":"Shop Owner";
+  $("posLayout").classList.toggle("hidden",isRgo);
+  $("rgoDashboard").classList.toggle("hidden",!isRgo);
+  $("rgoSalesPeriod").classList.toggle("hidden",!isRgo);
   $("salesPeriod").value="daily";
   const today=dateKey(new Date());
   $("salesReportDate").value=today;
@@ -186,11 +245,349 @@ function applyRole(role){
   updateSalesPeriodControls();
   renderInventory();
 }
-document.querySelectorAll("[data-login-role]").forEach(button=>button.onclick=()=>applyRole(button.dataset.loginRole));
+function renderNotifications(){
+  const notifications=[];
+  state.products.filter(product=>product.stock<=5).forEach(product=>{
+    const status=product.stock===0?"is out of stock":`is running low (${product.stock} left)`;
+    notifications.push({title:product.stock===0?"Out of stock":"Low stock",message:`${escapeHtml(product.name)} ${status}.`});
+  });
+  if(state.sales.length){
+    const latestSale=state.sales[0];
+    notifications.push({
+      title:"Latest sale recorded",
+      message:`Receipt ${escapeHtml(latestSale.id)} · ${peso.format(latestSale.total)} · ${new Date(latestSale.date).toLocaleString("en-PH")}`
+    });
+  }
+  $("notificationList").innerHTML=notifications.length
+    ?notifications.map(notification=>`<article class="notification-item"><strong>${notification.title}</strong><p>${notification.message}</p></article>`).join("")
+    :`<p class="notification-empty">You're all caught up. There are no new notifications.</p>`;
+}
+function renderShopSelector(){
+  const selector=$("shopSelect");
+  if(!selector)return;
+  selector.innerHTML=`<option value="__all_shops__">All registered shops</option>`
+    +state.shops.map(shop=>`<option value="${escapeHtml(shop.id)}">${escapeHtml(shop.name)}</option>`).join("")
+    +`<option value="__add_shop__">＋ Add another shop</option>`;
+  selector.value=state.reportShopId;
+  $("shopOverviewTitle").textContent=state.reportShopId==="__all_shops__"?"Consolidated Reports Overview":`${state.shops.find(shop=>shop.id===state.reportShopId)?.name||"Shop"} Reports Overview`;
+  renderReportsOverview();
+}
+function selectShop(shopId){
+  if(shopId==="__add_shop__"){
+    $("shopSelect").value=state.selectedShopId;
+    $("newShopName").value="";
+    $("addShopError").textContent="";
+    $("addShopError").classList.add("hidden");
+    openModal("addShopModal");
+    $("newShopName").focus();
+    return;
+  }
+  if(shopId==="__all_shops__"){
+    state.reportShopId=shopId;
+    renderShopSelector();
+    return;
+  }
+  if(!state.shops.some(shop=>shop.id===shopId))return;
+  state.reportShopId=shopId;
+  state.selectedShopId=shopId;
+  state.cart=[];
+  saveData();
+  renderShopSelector();
+  renderCategories();
+  renderProducts();
+  renderCart();
+  renderInventory();
+  renderSales();
+  renderReportsOverview();
+}
+function getReportShops(){
+  return state.reportShopId==="__all_shops__"
+    ?state.shops
+    :state.shops.filter(shop=>shop.id===state.reportShopId);
+}
+function renderReportsOverview(){
+  if(!$("dailySalesReport"))return;
+  const reportShops=getReportShops();
+  const reportDate=$("rgoReportDate").value||dateKey(new Date());
+  const dailyRows=reportShops.map(shop=>{
+    const sales=shop.sales.filter(sale=>dateKey(new Date(sale.date))===reportDate);
+    return {shop,sales,gross:sales.reduce((sum,sale)=>sum+(Number(sale.subtotal)||Number(sale.total)||0),0),discounts:sales.reduce((sum,sale)=>sum+(Number(sale.discount)||0),0),net:sales.reduce((sum,sale)=>sum+(Number(sale.total)||0),0)};
+  });
+  const receipts=dailyRows.flatMap(row=>row.sales.map(sale=>({shop:row.shop,sale})));
+  const inventory=reportShops.flatMap(shop=>shop.products.map(product=>({shop,product})));
+  const soldByShop=new Map(dailyRows.map(({shop,sales})=>{
+    const soldByProduct=new Map();
+    sales.forEach(sale=>sale.items.forEach(item=>{
+      const productKey=item.productId||item.name;
+      soldByProduct.set(productKey,(soldByProduct.get(productKey)||0)+(Number(item.qty)||0));
+    }));
+    return [shop.id,soldByProduct];
+  }));
+  const totalUnits=inventory.reduce((sum,row)=>sum+(Number(row.product.stock)||0),0);
+  const inventoryValue=inventory.reduce((sum,row)=>sum+(Number(row.product.stock)||0)*(Number(row.product.price)||0),0);
+  const totals=dailyRows.reduce((summary,row)=>({
+    count:summary.count+row.sales.length,
+    gross:summary.gross+row.gross,
+    discounts:summary.discounts+row.discounts,
+    net:summary.net+row.net
+  }),{count:0,gross:0,discounts:0,net:0});
+  $("reportShopCount").textContent=reportShops.length;
+  $("reportSaleCount").textContent=totals.count;
+  $("reportSaleDateCaption").textContent=new Date(`${reportDate}T00:00:00`).toLocaleDateString("en-PH",{dateStyle:"medium"});
+  $("reportNetSales").textContent=peso.format(totals.net);
+  $("reportInventoryUnits").textContent=totalUnits.toLocaleString("en-PH");
+  $("reportInventoryValue").textContent=`${peso.format(inventoryValue)} inventory value`;
+  $("dailySalesReport").innerHTML=dailyRows.length
+    ?dailyRows.map(row=>`<tr><td>${escapeHtml(row.shop.name)}</td><td>${row.sales.length}</td><td>${peso.format(row.gross)}</td><td>${peso.format(row.discounts)}</td><td>${peso.format(row.net)}</td></tr>`).join("")
+    :`<tr><td colspan="5">No registered shops.</td></tr>`;
+  $("shopFinancialReport").innerHTML=dailyRows.length
+    ?dailyRows.map(row=>`<tr><td>${escapeHtml(row.shop.name)}</td><td>${peso.format(row.gross)}</td><td>${peso.format(row.discounts)}</td><td>${peso.format(row.net)}</td><td>${row.sales.length}</td></tr>`).join("")
+    :`<tr><td colspan="5">No registered shops.</td></tr>`;
+  $("shopInventoryReport").innerHTML=inventory.length
+    ?inventory.map(({shop,product})=>`<tr><td>${escapeHtml(shop.name)}</td><td>${escapeHtml(product.name)}</td><td>${escapeHtml(product.category)}</td><td>${Number(product.stock)||0}</td><td>${soldByShop.get(shop.id)?.get(product.id)||soldByShop.get(shop.id)?.get(product.name)||0}</td><td>${peso.format(Number(product.price)||0)}</td><td>${peso.format((Number(product.stock)||0)*(Number(product.price)||0))}</td></tr>`).join("")
+    :`<tr><td colspan="7">No inventory records for these shops.</td></tr>`;
+  $("supportingDocumentsReport").innerHTML=receipts.length
+    ?receipts.map(({shop,sale})=>`<tr><td>${escapeHtml(shop.name)}</td><td>${escapeHtml(sale.id)}</td><td>${new Date(sale.date).toLocaleString("en-PH")}</td><td>${escapeHtml(sale.paymentMethod||"")}</td><td>${peso.format(Number(sale.total)||0)}</td><td><button class="small-btn" data-report-receipt="${escapeHtml(shop.id)}|${escapeHtml(sale.id)}">View receipt</button></td></tr>`).join("")
+    :`<tr><td colspan="6">No supporting receipts for this date.</td></tr>`;
+  document.querySelectorAll("[data-report-receipt]").forEach(button=>button.onclick=()=>{
+    const [shopId,saleId]=button.dataset.reportReceipt.split("|");
+    const sale=state.shops.find(shop=>shop.id===shopId)?.sales.find(record=>record.id===saleId);
+    if(sale)showReceipt(sale);
+  });
+}
+function refreshFromStoredShops(serializedShops){
+  try{
+    const savedShops=JSON.parse(serializedShops);
+    if(!Array.isArray(savedShops))throw new Error("Stored shop data is not an array.");
+    state.shops.splice(0,state.shops.length,...savedShops.map(shop=>({
+      ...shop,
+      products:Array.isArray(shop.products)?shop.products:[],
+      sales:Array.isArray(shop.sales)?shop.sales:[]
+    })));
+  }catch(storageError){
+    console.error("Could not refresh shop data from another tab.",storageError);
+    return;
+  }
+  renderReportsOverview();
+  renderSales();
+  if(state.role==="souvenir"){
+    renderCategories();
+    renderProducts();
+    renderInventory();
+    renderCart();
+  }else if(state.role==="rgo"&&!$("notificationModal").classList.contains("hidden")){
+    renderNotifications();
+  }
+}
+function downloadReportCsv(tableBodyId,reportName){
+  const table=$(tableBodyId).closest("table");
+  const rows=Array.from(table.rows,row=>Array.from(row.cells,cell=>cell.textContent.trim()));
+  const csv=rows.map(row=>row.map(value=>{
+    const safeValue=/^[\t\r ]*[=+\-@]/.test(value)?`'${value}`:value;
+    return `"${safeValue.replaceAll('"','""')}"`;
+  }).join(",")).join("\r\n");
+  const reportDate=$("rgoReportDate").value||dateKey(new Date());
+  const selectedShop=state.shops.find(shop=>shop.id===state.reportShopId);
+  const shopName=(selectedShop?.name||"all-shops").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"shop";
+  const blob=new Blob(["\uFEFF",csv],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement("a");
+  link.href=url;
+  link.download=`${reportName}-${shopName}-${reportDate}.csv`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function addShop(event){
+  event.preventDefault();
+  const name=$("newShopName").value.trim();
+  const error=$("addShopError");
+  error.textContent="";
+  error.classList.add("hidden");
+  if(!name){
+    error.textContent="Enter a shop name.";
+    error.classList.remove("hidden");
+    return;
+  }
+  if(state.shops.some(shop=>shop.name.toLocaleLowerCase()===name.toLocaleLowerCase())){
+    error.textContent="A shop with that name already exists.";
+    error.classList.remove("hidden");
+    return;
+  }
+  const shop={id:crypto.randomUUID(),name,products:[],sales:[]};
+  state.shops.push(shop);
+  const previousShopId=state.selectedShopId;
+  state.selectedShopId=shop.id;
+  try{
+    saveData();
+  }catch(storageError){
+    state.shops.pop();
+    state.selectedShopId=previousShopId;
+    error.textContent="The shop could not be saved in this browser. Check browser storage and try again.";
+    error.classList.remove("hidden");
+    return;
+  }
+  closeModal("addShopModal");
+  state.reportShopId=shop.id;
+  renderShopSelector();
+  renderCategories();
+  renderProducts();
+  renderCart();
+  renderInventory();
+  renderSales();
+  renderReportsOverview();
+}
+function clearAuthError(){
+  $("authError").textContent="";
+  $("authError").classList.add("hidden");
+}
+function setAuthMode(mode){
+  authMode=mode;
+  selectedAuthRole=null;
+  $("roleSelection").classList.remove("hidden");
+  $("credentialsForm").classList.add("hidden");
+  $("loginTitle").textContent=mode==="signup"?"Create your account":"Welcome back";
+  $("loginIntro").textContent=mode==="signup"?"Choose your account type to get started.":"Choose your account type to log in.";
+  document.querySelectorAll("[data-auth-mode]").forEach(button=>{
+    const active=button.dataset.authMode===mode;
+    button.classList.toggle("active",active);
+    button.setAttribute("aria-pressed",String(active));
+  });
+  clearAuthError();
+}
+function selectAuthRole(role){
+  selectedAuthRole=role;
+  const isShopOwner=role==="souvenir";
+  $("roleSelection").classList.add("hidden");
+  $("credentialsForm").classList.remove("hidden");
+  $("selectedRole").textContent=isShopOwner?"🛍️  Shop Owner":"📊  RGO";
+  $("authPassword").autocomplete=authMode==="signup"?"new-password":"current-password";
+  $("confirmPasswordField").classList.toggle("hidden",authMode!=="signup");
+  $("confirmPassword").required=authMode==="signup";
+  $("authSubmit").innerHTML=authMode==="signup"?"Create account <span aria-hidden=\"true\">→</span>":`Log in as ${isShopOwner?"Shop Owner":"RGO"} <span aria-hidden="true">→</span>`;
+  $("demoCredentials").classList.toggle("hidden",authMode==="signup");
+  $("demoCredentials").textContent=isShopOwner?"Demo: shopowner / owner123":"Demo: admin / admin123";
+  $("authUsername").value="";
+  $("authPassword").value="";
+  $("confirmPassword").value="";
+  clearAuthError();
+  $("authUsername").focus();
+}
+function submitCredentials(event){
+  event.preventDefault();
+  const username=$("authUsername").value.trim().toLowerCase();
+  const password=$("authPassword").value;
+  const error=$("authError");
+  const showError=message=>{error.textContent=message;error.classList.remove("hidden")};
+  if(!selectedAuthRole)return;
+  if(authMode==="signup"){
+    if(username.length<3){showError("Choose a username with at least 3 characters.");return}
+    if(password.length<6){showError("Choose a password with at least 6 characters.");return}
+    if(password!==$("confirmPassword").value){showError("Your passwords do not match.");return}
+    if(accounts.some(account=>account.role===selectedAuthRole&&account.username===username)){
+      showError("That username is already registered for this account type.");
+      return;
+    }
+    accounts.push({role:selectedAuthRole,username,password});
+    try{
+      localStorage.setItem(ACCOUNTS_STORAGE_KEY,JSON.stringify(accounts));
+    }catch(storageError){
+      accounts.pop();
+      showError("Your account could not be saved in this browser. Check browser storage and try again.");
+      return;
+    }
+  }else if(!accounts.some(account=>account.role===selectedAuthRole&&account.username===username&&account.password===password)){
+    showError("Incorrect username or password. Please try again.");
+    $("authPassword").value="";
+    $("authPassword").focus();
+    return;
+  }
+  const role=selectedAuthRole;
+  $("authUsername").value="";
+  $("authPassword").value="";
+  $("confirmPassword").value="";
+  applyRole(role);
+}
+function updateLoginTabs(){
+  const isSignup=authMode==="signup",isVendor=selectedAuthRole==="souvenir";
+  $("authTitle").textContent=isSignup?"Sign up":"Log in";
+  $("authSubtitle").textContent=isSignup?`Create your ${isVendor?"Vendor":"Admin"} account.`:"Welcome back.";
+  $("loginRoleHint").textContent=isVendor?"Vendor account":"Admin account";
+  $("confirmPasswordField").classList.toggle("hidden",!isSignup);
+  $("confirmPassword").required=isSignup;
+  $("loginPassword").autocomplete=isSignup?"new-password":"current-password";
+  $("loginSubmit").innerHTML=isSignup?"Create account <span aria-hidden=\"true\">→</span>":"Log in <span aria-hidden=\"true\">→</span>";
+  $("demoCredentials").classList.toggle("hidden",isSignup);
+  $("demoCredentials").textContent=isVendor?"Demo: shopowner / owner123":"Demo: admin / admin123";
+  document.querySelectorAll("[data-auth-tab]").forEach(button=>{
+    const active=button.dataset.authTab===activeAuthTab;
+    button.classList.toggle("active",active);
+    button.setAttribute("aria-pressed",String(active));
+  });
+  $("loginError").textContent="";
+  $("loginError").classList.add("hidden");
+}
+function handleLoginSubmit(event){
+  event.preventDefault();
+  const username=$("loginUsername").value.trim().toLowerCase();
+  const password=$("loginPassword").value;
+  const error=$("loginError");
+  const showError=message=>{error.textContent=message;error.classList.remove("hidden")};
+  if(!username||!password){showError("Enter your email or username and password.");return}
+  if(authMode==="signup"){
+    if(username.length<3){showError("Use at least 3 characters for your email or username.");return}
+    if(password.length<6){showError("Use a password with at least 6 characters.");return}
+    if(password!==$("confirmPassword").value){showError("Your passwords do not match.");return}
+    if(accounts.some(account=>account.role===selectedAuthRole&&account.username===username)){
+      showError("That email or username is already registered for this account type.");
+      return;
+    }
+    accounts.push({role:selectedAuthRole,username,password});
+    try{
+      localStorage.setItem(ACCOUNTS_STORAGE_KEY,JSON.stringify(accounts));
+    }catch(storageError){
+      accounts.pop();
+      showError("Your account could not be saved in this browser. Check browser storage and try again.");
+      return;
+    }
+  }else if(!accounts.some(account=>account.role===selectedAuthRole&&account.username===username&&account.password===password)
+    &&!(LOGIN_CREDENTIALS[selectedAuthRole]?.username===username&&LOGIN_CREDENTIALS[selectedAuthRole]?.password===password)){
+    showError("Incorrect email/username or password. Please try again.");
+    $("loginPassword").value="";
+    $("loginPassword").focus();
+    return;
+  }
+  $("loginUsername").value="";
+  $("loginPassword").value="";
+  $("confirmPassword").value="";
+  applyRole(selectedAuthRole);
+}
+document.querySelectorAll("[data-auth-tab]").forEach(button=>button.onclick=()=>{
+  activeAuthTab=button.dataset.authTab;
+  if(activeAuthTab==="login"||activeAuthTab==="signup")authMode=activeAuthTab;
+  else selectedAuthRole=activeAuthTab==="vendor"?"souvenir":"rgo";
+  $("loginUsername").value="";
+  $("loginPassword").value="";
+  $("confirmPassword").value="";
+  updateLoginTabs();
+});
+$("loginForm").onsubmit=handleLoginSubmit;
 $("logoutBtn").onclick=()=>applyRole(null);
-$("rgoSalesBtn").onclick=$("salesBtn").onclick;
-$("rgoInventoryBtn").onclick=$("inventoryBtn").onclick;
+$("rgoSalesBtn").onclick=()=>$("dailySalesReport").closest(".rgo-report-section").scrollIntoView({behavior:"smooth",block:"start"});
+$("rgoInventoryBtn").onclick=()=>$("shopInventoryReport").closest(".rgo-report-section").scrollIntoView({behavior:"smooth",block:"start"});
+$("downloadInventoryReport").onclick=()=>downloadReportCsv("shopInventoryReport","inventory-report");
+$("downloadFinancialReport").onclick=()=>downloadReportCsv("shopFinancialReport","financial-report");
 document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>closeModal(b.dataset.close));document.querySelectorAll(".modal").forEach(m=>m.onclick=e=>{if(e.target===m)closeModal(m.id)});
+if($("shopSelect"))$("shopSelect").onchange=event=>selectShop(event.target.value);
+if($("rgoReportDate"))$("rgoReportDate").onchange=renderReportsOverview;
+if($("addShopForm"))$("addShopForm").onsubmit=addShop;
+window.addEventListener("storage",event=>{
+  if(event.key===SHOPS_STORAGE_KEY&&event.newValue)refreshFromStoredShops(event.newValue);
+});
 function updateClock(){els.clock.textContent=new Date().toLocaleString("en-PH",{dateStyle:"medium",timeStyle:"short"})}setInterval(updateClock,1000);updateClock();
+renderShopSelector();
+if($("rgoReportDate"))$("rgoReportDate").value=dateKey(new Date());
 saveData();renderCategories();renderProducts();renderCart();renderInventory();renderSales();
+updateLoginTabs();
 applyRole(state.role);
