@@ -3,28 +3,30 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PUP Souvenir Shop</title>
+  <title>SinTalaan | PUP Resource Generation Office</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <section id="loginScreen" class="login-screen">
     <div class="login-card">
+      <div class="auth-brand"><div class="auth-brand-mark">ST</div><div><strong>SinTalaan</strong><span>PUP Resource Generation Office</span></div></div>
       <div class="login-heading">
         <h1 id="authTitle">Log in</h1>
-        <p id="authSubtitle">Welcome back.</p>
+        <p id="authSubtitle">Welcome back to your workspace.</p>
       </div>
       <div class="login-tabs" role="group" aria-label="Login options">
         <button class="login-tab active" type="button" data-auth-tab="login" aria-pressed="true">Log in</button>
         <button class="login-tab" type="button" data-auth-tab="signup" aria-pressed="false">Sign up</button>
-        <button class="login-tab" type="button" data-auth-tab="vendor" aria-pressed="false">Vendor</button>
+        <button class="login-tab" type="button" data-auth-tab="vendor" aria-pressed="false">Shop</button>
         <button class="login-tab" type="button" data-auth-tab="admin" aria-pressed="false">Admin</button>
       </div>
       <form id="loginForm" class="login-form" novalidate>
-        <div id="loginRoleHint" class="login-role-hint">Vendor account</div>
+        <div id="loginRoleHint" class="login-role-hint">Admin account</div>
         <label for="loginUsername">Email or username</label>
         <input id="loginUsername" name="username" type="text" autocomplete="username" placeholder="Enter your email or username" required />
         <label for="loginPassword">Password</label>
         <input id="loginPassword" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required />
+        <button id="forgotPasswordBtn" class="forgot-password" type="button">Forgot password?</button>
         <div id="confirmPasswordField" class="login-confirm-field hidden">
           <label for="confirmPassword">Confirm password</label>
           <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" placeholder="Confirm your password" />
@@ -40,7 +42,7 @@
   <div class="app-shell hidden" id="appShell">
     <header class="topbar">
       <div class="brand-wrap">
-        <div class="brand-mark">L</div>
+        <div class="brand-mark">S</div>
         <div>
           <h1 id="appBrandTitle">PUP Souvenir Shop</h1>
           <p id="appBrandSubtitle">Local finds • Happy memories</p>
@@ -51,73 +53,172 @@
         <span class="role-badge" id="roleBadge"></span>
         <button id="inventoryBtn" class="secondary icon-action">📦 Inventory</button>
         <button id="salesBtn" class="secondary icon-action">📈 Sales</button>
+        <button id="documentsBtn" class="secondary icon-action">▱ Documents</button>
         <button id="logoutBtn" class="secondary icon-action">Log out</button>
       </div>
     </header>
 
     <main id="rgoDashboard" class="rgo-dashboard hidden">
-      <div class="rgo-welcome">
-        <span class="eyebrow">RESOURCE GENERATING OFFICE</span>
-        <h2 id="shopOverviewTitle">Consolidated Reports Overview</h2>
-        <p>Review daily sales, current inventory, financial summaries, and transaction receipts by shop or across all registered shops.</p>
-        <div class="shop-selector">
-          <label for="shopSelect">Select a shop</label>
-          <select id="shopSelect"></select>
+      <aside class="admin-sidebar">
+        <div class="sidebar-label">WORKSPACE</div>
+        <button class="admin-nav active" type="button" data-admin-view="home"><span>⌂</span> Overview</button>
+        <div class="sidebar-label shop-nav-label">SHOP MANAGEMENT</div>
+        <div id="adminShopList" class="admin-shop-list"></div>
+        <details class="archived-shops"><summary>Archived shops</summary><div id="archivedShopList"></div></details>
+        <button class="admin-nav add-shop-nav" type="button" id="sidebarAddShop"><span>＋</span> Add a shop</button>
+        <div class="sidebar-divider"></div>
+        <button class="admin-nav" type="button" data-admin-view="sales"><span>↗</span> Daily sales</button>
+        <button class="admin-nav" type="button" data-admin-view="inventory"><span>▤</span> Inventory</button>
+        <button class="admin-nav" type="button" data-admin-view="reports"><span>▧</span> Financial reports</button>
+        <button class="admin-nav" type="button" data-admin-view="documents"><span>▱</span> Documents</button>
+        <button class="admin-nav" type="button" data-admin-view="users"><span>♙</span> User management</button>
+        <button class="admin-nav" type="button" data-admin-view="settings"><span>⚙</span> System settings</button>
+        <div class="sidebar-footer"><span class="sidebar-avatar">R</span><span><strong>Resource Generation</strong><small>Office administrator</small></span></div>
+      </aside>
+
+      <div class="admin-main">
+        <div class="admin-page-heading">
+          <div><span class="eyebrow">RESOURCE GENERATION OFFICE</span><h2 id="adminPageTitle">Overview</h2><p id="adminPageDescription">A clear view of sales and inventory across your campus shops.</p></div>
+          <div class="admin-heading-actions">
+            <label class="shop-selector admin-shop-filter"><span class="visually-hidden">Filter by shop</span><select id="shopSelect" aria-label="Filter dashboard by shop"></select></label>
+            <button type="button" class="admin-icon-button" id="adminNotifications" aria-label="View notifications">♧<span class="notification-dot"></span></button>
+            <span class="admin-user-avatar" aria-label="RGO administrator">RA</span>
+          </div>
         </div>
-        <div class="report-date-control">
-          <label for="rgoReportDate">Daily report date</label>
-          <input id="rgoReportDate" type="date" />
-        </div>
-        <div class="rgo-actions">
-          <button class="primary" id="rgoSalesBtn">📈 Daily sales report</button>
-          <button class="secondary" id="rgoInventoryBtn">📦 Inventory report</button>
-        </div>
-        <section class="rgo-report-overview" aria-label="Shop reports overview">
-          <div class="rgo-report-metrics">
-            <article class="rgo-metric"><span>Registered shops</span><strong id="reportShopCount">0</strong><small>Shops included</small></article>
-            <article class="rgo-metric"><span>Daily transactions</span><strong id="reportSaleCount">0</strong><small id="reportSaleDateCaption">Selected date</small></article>
-            <article class="rgo-metric"><span>Daily net sales</span><strong id="reportNetSales">₱0.00</strong><small>After discounts</small></article>
-            <article class="rgo-metric"><span>Inventory units</span><strong id="reportInventoryUnits">0</strong><small id="reportInventoryValue">₱0.00 inventory value</small></article>
+
+        <section class="admin-view active" data-admin-panel="home" aria-label="Admin dashboard overview">
+          <div class="admin-welcome-banner">
+            <div><span class="welcome-kicker">SIN TALAAN · CENTRAL MONITORING</span><h3>Good day, Administrator</h3><p>Here’s what’s happening across your shops today.</p></div>
+            <div class="banner-date"><span>REPORTING DATE</span><strong id="dashboardDate">Today</strong></div>
+          </div>
+          <div class="admin-stat-grid">
+            <article class="admin-stat"><div class="stat-top"><span>Registered shops</span><span class="stat-icon burgundy">⌂</span></div><strong id="dashShopCount">0</strong><small><span class="stat-note">Across PUP campuses</span></small></article>
+            <article class="admin-stat"><div class="stat-top"><span>Total products</span><span class="stat-icon gold">▦</span></div><strong id="dashProductCount">0</strong><small><span class="stat-note">Registered in inventory</span></small></article>
+            <article class="admin-stat"><div class="stat-top"><span>Sales today</span><span class="stat-icon green">₱</span></div><strong id="dashSalesToday">₱0</strong><small><span class="stat-note" id="dashTransactionsToday">0 transactions</span></small></article>
+            <article class="admin-stat"><div class="stat-top"><span>Inventory alerts</span><span class="stat-icon amber">!</span></div><strong id="dashInventoryAlerts">0</strong><small><span class="stat-note">Low or out of stock</span></small></article>
+            <article class="admin-stat"><div class="stat-top"><span>Pending reports</span><span class="stat-icon slate">▤</span></div><strong id="dashPendingReports">0</strong><small><span class="stat-note">Awaiting submission</span></small></article>
           </div>
 
-          <section class="rgo-report-section">
-            <h3>Daily sales report</h3>
-            <div class="table-wrap"><table>
-              <thead><tr><th>Shop</th><th>Transactions</th><th>Gross sales</th><th>Discounts</th><th>Net sales</th></tr></thead>
-              <tbody id="dailySalesReport"></tbody>
-            </table></div>
-          </section>
+          <div class="admin-content-grid">
+            <section class="admin-card sales-chart-card">
+              <div class="admin-card-heading"><div><h3>Sales performance</h3><p>Daily gross sales across all shops</p></div><span class="chart-period">Last 7 days</span></div>
+              <div class="chart-summary"><strong id="chartTotalSales">₱0</strong><span>Gross sales · last 7 days</span></div>
+              <div class="chart-container" id="salesTrendChart" role="img" aria-label="Sales over the last seven days"></div>
+            </section>
+            <section class="admin-card notifications-card">
+              <div class="admin-card-heading"><div><h3>Payment reminders</h3><p>Payment status and inventory alerts</p></div><span class="card-more">•••</span></div>
+              <div class="reminder-list" id="adminReminderList"></div>
+              <button type="button" class="text-action" data-admin-view="reports">View financial reports <span>→</span></button>
+            </section>
+          </div>
 
-          <section class="rgo-report-section">
-            <div class="rgo-report-section-heading">
-              <h3>Inventory report</h3>
-              <button class="secondary rgo-report-download" id="downloadInventoryReport" type="button">Download CSV</button>
+          <section class="admin-card shops-card">
+            <div class="admin-card-heading"><div><h3>Managed shops</h3><p>Monitor shop activity and inventory at a glance.</p></div><button type="button" class="outline-button" id="overviewAddShop">＋ Add shop</button></div>
+            <div id="adminShopCards" class="admin-shop-cards"></div>
+          </section>
+          <section class="admin-card activity-card">
+            <div class="admin-card-heading"><div><h3>Recent activity</h3><p>Latest recorded transactions and stock changes.</p></div><button type="button" class="text-action" data-admin-view="sales">View sales <span>→</span></button></div>
+            <div id="adminActivityList" class="activity-list"></div>
+          </section>
+        </section>
+
+        <section class="admin-view" data-admin-panel="sales">
+          <section class="admin-card report-filter-card">
+            <div class="admin-card-heading"><div><h3>Daily sales summary</h3><p>Review transactions by shop and reporting date.</p></div><label class="report-date-control">Report date<input id="rgoReportDate" type="date" /></label></div>
+            <div class="admin-report-metrics">
+              <article><span>Shops included</span><strong id="reportShopCount">0</strong></article>
+              <article><span>Transactions</span><strong id="reportSaleCount">0</strong><small id="reportSaleDateCaption">Selected date</small></article>
+              <article><span>Net sales</span><strong id="reportNetSales">₱0.00</strong><small>After discounts</small></article>
+              <article><span>Inventory units</span><strong id="reportInventoryUnits">0</strong><small id="reportInventoryValue">₱0.00 inventory value</small></article>
             </div>
-            <div class="table-wrap"><table>
-              <thead><tr><th>Shop</th><th>Product</th><th>Category</th><th>Stock quantity</th><th>Units sold (selected date)</th><th>Unit price</th><th>Stock value</th></tr></thead>
-              <tbody id="shopInventoryReport"></tbody>
-            </table></div>
           </section>
+          <section class="admin-card admin-table-card">
+            <div class="admin-card-heading"><div><h3>Sales by shop</h3><p>Gross sales, discounts, and net sales for the selected date.</p></div><button class="secondary" id="openSalesHistory" type="button">Transaction history</button></div>
+            <div class="table-wrap"><table><thead><tr><th>Shop</th><th>Transactions</th><th>Gross sales</th><th>Discounts</th><th>Net sales</th></tr></thead><tbody id="dailySalesReport"></tbody></table></div>
+          </section>
+          <section class="admin-card admin-table-card">
+            <div class="admin-card-heading"><div><h3>Supporting receipts</h3><p>Transaction receipts for the selected date.</p></div></div>
+            <div class="table-wrap"><table><thead><tr><th>Shop</th><th>Receipt</th><th>Date</th><th>Payment</th><th>Total</th><th></th></tr></thead><tbody id="supportingDocumentsReport"></tbody></table></div>
+          </section>
+        </section>
 
-          <section class="rgo-report-section">
-            <div class="rgo-report-section-heading">
-              <h3>Financial report</h3>
-              <button class="secondary rgo-report-download" id="downloadFinancialReport" type="button">Download CSV</button>
-            </div>
-            <div class="table-wrap"><table>
-              <thead><tr><th>Shop</th><th>Gross sales</th><th>Discounts</th><th>Net sales</th><th>Transactions</th></tr></thead>
-              <tbody id="shopFinancialReport"></tbody>
-            </table></div>
+        <section class="admin-view" data-admin-panel="inventory">
+          <div class="admin-stat-grid inventory-stat-grid">
+            <article class="admin-stat"><div class="stat-top"><span>Products in stock</span><span class="stat-icon green">✓</span></div><strong id="dashInStock">0</strong><small>Available for sale</small></article>
+            <article class="admin-stat"><div class="stat-top"><span>Low stock alerts</span><span class="stat-icon amber">!</span></div><strong id="dashLowStock">0</strong><small>5 units or fewer</small></article>
+            <article class="admin-stat"><div class="stat-top"><span>Out of stock</span><span class="stat-icon burgundy">×</span></div><strong id="dashOutStock">0</strong><small>Restock recommended</small></article>
+          </div>
+          <section class="admin-card admin-table-card">
+            <div class="admin-card-heading"><div><h3>Inventory monitoring</h3><p>Current product levels across registered shops.</p></div><div class="report-actions"><button class="secondary" id="manageShopInventory" type="button">Manage selected shop</button><button class="secondary" id="downloadInventoryReport" type="button">Download CSV</button></div></div>
+            <div class="table-wrap"><table><thead><tr><th>Shop</th><th>Product ID</th><th>Barcode</th><th>Product</th><th>Category</th><th>Stock quantity</th><th>Status</th><th>Last updated</th><th>Units sold</th><th>Unit price</th><th>Stock value</th></tr></thead><tbody id="shopInventoryReport"></tbody></table></div>
           </section>
+        </section>
 
-          <section class="rgo-report-section">
-            <h3>Supporting documents</h3>
-            <p class="report-help">Transaction receipts for the selected date are available here as supporting sales documents.</p>
-            <div class="table-wrap"><table>
-              <thead><tr><th>Shop</th><th>Receipt</th><th>Date</th><th>Payment</th><th>Total</th><th></th></tr></thead>
-              <tbody id="supportingDocumentsReport"></tbody>
-            </table></div>
+        <section class="admin-view" data-admin-panel="reports">
+          <section class="admin-card report-filter-card">
+            <div class="admin-card-heading"><div><h3>Financial reports</h3><p>Generate sales summaries and royalty calculations for your shops.</p></div><div class="report-controls"><div class="report-date-control"><label for="financialReportMonth">Report month</label><input id="financialReportMonth" type="month" /></div><div class="report-date-control"><label for="royaltyRate">Royalty rate (%)</label><input id="royaltyRate" type="number" min="0" max="100" step="0.1" value="6" /></div></div></div>
+            <div class="royalty-summary" id="royaltySummary"></div>
+            <div class="report-actions"><button type="button" class="primary" id="printFinancialReport">Print / Export PDF</button><button type="button" class="secondary" id="downloadFinancialReport">Download CSV</button></div>
           </section>
+          <section class="admin-card admin-table-card">
+            <div class="admin-card-heading"><div><h3>Monthly financial summary</h3><p>Gross sales, discounts, and net sales by shop.</p></div></div>
+            <div class="table-wrap"><table><thead><tr><th>Shop</th><th>Gross sales</th><th>Discounts</th><th>Net sales</th><th>Transactions</th></tr></thead><tbody id="shopFinancialReport"></tbody></table></div>
+          </section>
+          <section class="admin-card admin-table-card quarterly-card">
+            <div class="admin-card-heading"><div><h3>Quarterly sales snapshot</h3><p id="quarterlyCaption">Current quarter</p></div><span class="quarterly-badge">QUARTERLY</span></div>
+            <div class="quarterly-stats"><div><span>Gross sales</span><strong id="quarterGrossSales">₱0.00</strong></div><div><span>Transactions</span><strong id="quarterTransactions">0</strong></div><div><span>Best-selling product</span><strong id="quarterBestSeller">—</strong></div></div>
+          </section>
+        </section>
+
+        <section class="admin-view" data-admin-panel="documents">
+          <section class="admin-card document-upload-card">
+            <div><span class="stat-icon burgundy">↥</span><h3>Supporting documents</h3><p>Store purchase proofs, receipts, and other shop documents in this browser.</p></div>
+            <div class="document-upload-actions"><label for="documentCategory" class="visually-hidden">Document category</label><select id="documentCategory"><option>Proof of Purchase</option><option>Sales Receipts</option><option>Other Documents</option></select><label class="upload-button" for="documentFile">＋ Upload document</label></div>
+            <input id="documentFile" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx" class="visually-hidden" />
+          </section>
+          <section class="admin-card admin-table-card">
+            <div class="admin-card-heading"><div><h3>Document library</h3><p>PDF, JPG, PNG, and DOCX · 2 MB maximum per file, stored in this browser.</p></div><label class="document-filter-label" for="documentCategoryFilter">Category</label><select id="documentCategoryFilter"><option value="all">All documents</option><option>Proof of Purchase</option><option>Sales Receipts</option><option>Other Documents</option></select></div>
+            <div class="table-wrap"><table><thead><tr><th>File name</th><th>Category</th><th>Date uploaded</th><th>Shop</th><th>Actions</th></tr></thead><tbody id="documentsTable"></tbody></table></div>
+          </section>
+        </section>
+
+        <section class="admin-view" data-admin-panel="users">
+          <section class="admin-card">
+            <div class="admin-card-heading"><div><h3>Add a system user</h3><p>Create a demo account and choose its access role.</p></div></div>
+            <form id="userForm" class="user-form">
+              <div><label for="userUsername">Email or username</label><input id="userUsername" required minlength="3" autocomplete="off" placeholder="e.g. shopstaff" /></div>
+              <div><label for="userPassword">Temporary password</label><input id="userPassword" type="password" required minlength="6" autocomplete="new-password" placeholder="At least 6 characters" /></div>
+              <div><label for="userRole">Role</label><select id="userRole"><option value="souvenir">Shop Staff</option><option value="rgo">Admin</option></select></div>
+              <button type="submit" class="primary">Create user</button>
+              <p id="userFormMessage" class="user-form-message" role="status"></p>
+            </form>
+          </section>
+          <section class="admin-card admin-table-card">
+            <div class="admin-card-heading"><div><h3>Registered users</h3><p>Demo account list · passwords are never displayed here.</p></div></div>
+            <div class="table-wrap"><table><thead><tr><th>Username</th><th>Role</th><th>Account type</th><th>Actions</th></tr></thead><tbody id="usersTable"></tbody></table></div>
+            <p class="report-help">This prototype stores demo credentials in browser storage. Use a secure backend for real accounts and access control.</p>
+          </section>
+        </section>
+
+        <section class="admin-view" data-admin-panel="settings">
+          <section class="admin-card settings-card">
+            <div class="admin-card-heading"><div><h3>Inventory alerts</h3><p>Choose when a product should be flagged as low stock.</p></div></div>
+            <form id="settingsForm" class="settings-form">
+              <div><label for="lowStockThreshold">Low stock threshold</label><div class="setting-number"><input id="lowStockThreshold" type="number" min="1" max="1000" step="1" required /><span>units or fewer</span></div></div>
+              <button type="submit" class="primary">Save settings</button>
+              <p id="settingsMessage" class="user-form-message" role="status"></p>
+            </form>
+          </section>
+          <section class="admin-card settings-card">
+            <div class="admin-card-heading"><div><h3>System information</h3><p>Deployment and storage details for this demo workspace.</p></div></div>
+            <div class="system-info-grid"><div><span>Application</span><strong>SinTalaan POS & Inventory Monitoring System</strong></div><div><span>Department</span><strong>PUP Resource Generation Office</strong></div><div><span>Storage</span><strong>Local browser storage</strong></div><div><span>Network sync</span><strong>Not configured</strong></div></div>
+            <p class="report-help">Connect a backend before using this prototype for production data, multi-device collaboration, or official reporting.</p>
+          </section>
+        </section>
+
+        <section class="admin-data-store" aria-hidden="true">
+          <h3 id="shopOverviewTitle">Consolidated Reports Overview</h3>
+          <table><tbody id="legacyReportStore"></tbody></table>
         </section>
       </div>
     </main>
@@ -136,6 +237,21 @@
           </div>
         </div>
 
+        <div class="vendor-tabs" role="tablist" aria-label="Shop tools">
+          <button class="vendor-tab active" id="posTab" type="button" role="tab" aria-selected="true" aria-controls="posView">Point of Sale</button>
+          <button class="vendor-tab" id="registeredProductsTab" type="button" role="tab" aria-selected="false" aria-controls="registeredProductsView">Registered Products <span id="registeredProductsCount">0</span></button>
+        </div>
+
+        <div id="posView" class="vendor-view active" role="tabpanel" aria-labelledby="posTab">
+        <form id="barcodeForm" class="barcode-scan-panel">
+          <div class="barcode-scan-icon" aria-hidden="true">▥</div>
+          <div class="barcode-scan-copy"><strong>Scan or enter a product barcode</strong><span>Use a barcode scanner or type the item code manually.</span></div>
+          <label for="barcodeInput" class="visually-hidden">Scan or enter barcode</label>
+          <input id="barcodeInput" type="text" inputmode="numeric" autocomplete="off" placeholder="Barcode / item code" />
+          <button class="primary" type="submit">Add item</button>
+          <p id="barcodeMessage" class="barcode-message" aria-live="polite"></p>
+        </form>
+
         <div class="toolbar">
           <div>
             <h3>Souvenir Collection</h3>
@@ -149,6 +265,14 @@
 
         <div id="categoryFilters" class="filters"></div>
         <div id="productGrid" class="product-grid"></div>
+        </div>
+
+        <section id="registeredProductsView" class="vendor-view registered-products-view" role="tabpanel" aria-labelledby="registeredProductsTab" hidden>
+          <div class="registered-products-heading"><div><h3>Registered products</h3><p>Manage your shop’s product catalog, barcodes, and stock.</p></div><button id="registeredAddProduct" type="button" class="primary">＋ Add product</button></div>
+          <div class="registered-products-search"><span aria-hidden="true">⌕</span><label for="registeredProductSearch" class="visually-hidden">Search registered products</label><input id="registeredProductSearch" type="search" placeholder="Search name, category, or barcode..." /></div>
+          <div class="table-wrap registered-products-table"><table><thead><tr><th>Barcode</th><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead><tbody id="registeredProductsTable"></tbody></table></div>
+          <p class="registered-products-note">Barcode scanners that type into a field and send Enter are supported. You can also enter codes manually.</p>
+        </section>
       </section>
 
       <aside class="cart-panel">
@@ -227,6 +351,7 @@
         <div><span class="eyebrow">RESOURCE GENERATION OFFICE</span><h2>Add another shop</h2></div>
         <button class="icon-btn" data-close="addShopModal" type="button">✕</button>
       </div>
+
       <form id="addShopForm" class="add-shop-form">
         <label for="newShopName">Shop name</label>
         <input id="newShopName" name="shopName" required maxlength="60" placeholder="e.g. Campus Bookstore" />
@@ -236,6 +361,15 @@
           <button class="secondary" type="button" data-close="addShopModal">Cancel</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <div id="staffDocumentsModal" class="modal hidden">
+    <div class="modal-card large">
+      <div class="modal-header"><div><span class="eyebrow">SHOP WORKSPACE</span><h2>Supporting documents</h2></div><button class="icon-btn" data-close="staffDocumentsModal" type="button">✕</button></div>
+      <div class="staff-document-upload"><label for="staffDocumentCategory">Category</label><select id="staffDocumentCategory"><option>Proof of Purchase</option><option>Sales Receipts</option><option>Other Documents</option></select><label class="upload-button" for="staffDocumentFile">＋ Upload document</label><input id="staffDocumentFile" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx" class="visually-hidden" /></div>
+      <p class="report-help">PDF, JPG, PNG, and DOCX · 2 MB maximum per file. Documents are stored in this browser.</p>
+      <div class="table-wrap"><table><thead><tr><th>File name</th><th>Category</th><th>Date uploaded</th><th>Actions</th></tr></thead><tbody id="staffDocumentsTable"></tbody></table></div>
     </div>
   </div>
 
@@ -250,19 +384,21 @@
 
       <form id="productForm" class="product-form">
         <input type="hidden" id="productId" />
-        <div><label>Product Name</label><input id="productName" required placeholder="e.g. Manila Mug" /></div>
-        <div><label>Category</label><input id="productCategory" required placeholder="e.g. Mugs" /></div>
-        <div><label>Price</label><input id="productPrice" type="number" required min="0" step="0.01" placeholder="0.00" /></div>
-        <div><label>Stock</label><input id="productStock" type="number" required min="0" step="1" placeholder="0" /></div>
+        <div><label for="productName">Product Name</label><input id="productName" required placeholder="e.g. Manila Mug" /></div>
+        <div><label for="productCategory">Category</label><input id="productCategory" required placeholder="e.g. Mugs" /></div>
+        <div class="product-barcode-field"><label for="productBarcode">Barcode / item code</label><div><input id="productBarcode" inputmode="numeric" autocomplete="off" placeholder="Auto-generate if blank" /><button id="generateBarcodeBtn" type="button" class="secondary">Generate</button></div></div>
+        <div><label for="productPrice">Price</label><input id="productPrice" type="number" required min="0" step="0.01" placeholder="0.00" /></div>
+        <div><label for="productStock">Stock</label><input id="productStock" type="number" required min="0" step="1" placeholder="0" /></div>
         <div class="form-actions">
           <button class="primary" type="submit">Save Product</button>
           <button class="secondary" type="button" id="resetProductForm">Reset</button>
         </div>
+        <p id="productFormMessage" class="product-form-message" aria-live="polite"></p>
       </form>
 
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th id="inventoryActionsHeader">Actions</th></tr></thead>
+          <thead><tr><th>Product</th><th>Barcode</th><th>Category</th><th>Price</th><th>Stock</th><th id="inventoryActionsHeader">Actions</th></tr></thead>
           <tbody id="inventoryTable"></tbody>
         </table>
       </div>
@@ -309,7 +445,7 @@
         <button class="icon-btn" data-close="receiptModal">✕</button>
       </div>
       <div id="receiptContent"></div>
-      <button id="printReceiptBtn" class="checkout-btn no-print">Print Receipt 🖨️</button>
+      <button id="printReceiptBtn" class="checkout-btn no-print">Print / Save Receipt as PDF 🖨️</button>
     </div>
   </div>
 
