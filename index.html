@@ -11,17 +11,15 @@
     <div class="login-card">
       <div class="auth-brand"><div class="auth-brand-mark">ST</div><div><strong>SinTalaan</strong><span>PUP Resource Generation Office</span></div></div>
       <div class="login-heading">
-        <h1 id="authTitle">Log in</h1>
-        <p id="authSubtitle">Welcome back to your workspace.</p>
+        <h1 id="authTitle">Shop account</h1>
+        <p id="authSubtitle">Sign in to your Shop account.</p>
       </div>
-      <div class="login-tabs" role="group" aria-label="Login options">
-        <button class="login-tab active" type="button" data-auth-tab="login" aria-pressed="true">Log in</button>
-        <button class="login-tab" type="button" data-auth-tab="signup" aria-pressed="false">Sign up</button>
-        <button class="login-tab" type="button" data-auth-tab="vendor" aria-pressed="false">Shop</button>
+      <div class="login-tabs" role="group" aria-label="Choose account type">
+        <button class="login-tab active" type="button" data-auth-tab="vendor" aria-pressed="true">Shop</button>
         <button class="login-tab" type="button" data-auth-tab="admin" aria-pressed="false">Admin</button>
       </div>
       <form id="loginForm" class="login-form" novalidate>
-        <div id="loginRoleHint" class="login-role-hint">Admin account</div>
+        <div id="loginRoleHint" class="login-role-hint">Shop account</div>
         <label for="loginUsername">Email or username</label>
         <input id="loginUsername" name="username" type="text" autocomplete="username" placeholder="Enter your email or username" required />
         <label for="loginPassword">Password</label>
@@ -34,6 +32,7 @@
         <p id="loginError" class="login-error hidden" role="alert"></p>
         <button id="loginSubmit" class="login-submit" type="submit">Log in <span aria-hidden="true">→</span></button>
         <small id="demoCredentials" class="credential-note">Demo: shopowner / owner123</small>
+        <button id="authModeToggle" class="auth-mode-toggle" type="button">Create a Shop account</button>
       </form>
       <p class="prototype-note">Demo access only. For real accounts, use secure authentication on a backend.</p>
     </div>
