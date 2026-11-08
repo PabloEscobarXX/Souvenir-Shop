@@ -77,8 +77,7 @@ try {
   console.error("Could not read system settings.", storageError);
 }
 let authMode = "login";
-let selectedAuthRole = "rgo";
-let activeAuthTab = "login";
+let selectedAuthRole = "souvenir";
 
 const peso = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" });
 const $ = id => document.getElementById(id);
@@ -875,19 +874,20 @@ function submitCredentials(event){
 }
 function updateLoginTabs(){
   const isSignup=authMode==="signup",isShop=selectedAuthRole==="souvenir";
-  $("authTitle").textContent=isSignup?"Sign up":"Log in";
-  $("authSubtitle").textContent=isSignup?`Create your ${isShop?"Shop":"Admin"} account.`:"Welcome back.";
+  const roleName=isShop?"Shop":"Admin";
+  $("authTitle").textContent=`${roleName} account`;
+  $("authSubtitle").textContent=isSignup?`Create your ${roleName} account.`:`Sign in to your ${roleName} account.`;
   $("loginRoleHint").textContent=isShop?"Shop account":"Admin account";
   $("confirmPasswordField").classList.toggle("hidden",!isSignup);
   $("confirmPassword").required=isSignup;
   $("loginPassword").autocomplete=isSignup?"new-password":"current-password";
   $("loginSubmit").innerHTML=isSignup?"Create account <span aria-hidden=\"true\">→</span>":"Log in <span aria-hidden=\"true\">→</span>";
+  $("forgotPasswordBtn").classList.toggle("hidden",isSignup);
   $("demoCredentials").classList.toggle("hidden",isSignup);
   $("demoCredentials").textContent=isShop?"Demo: shopowner / owner123":"Demo: admin / admin123";
+  $("authModeToggle").textContent=isSignup?"Back to log in":`Create ${isShop?"a":"an"} ${roleName} account`;
   document.querySelectorAll("[data-auth-tab]").forEach(button=>{
-    const active=button.dataset.authTab==="login"||button.dataset.authTab==="signup"
-      ?button.dataset.authTab===authMode
-      :button.dataset.authTab===(isShop?"vendor":"admin");
+    const active=button.dataset.authTab===(isShop?"vendor":"admin");
     button.classList.toggle("active",active);
     button.setAttribute("aria-pressed",String(active));
   });
@@ -930,14 +930,19 @@ function handleLoginSubmit(event){
   applyRole(selectedAuthRole);
 }
 document.querySelectorAll("[data-auth-tab]").forEach(button=>button.onclick=()=>{
-  activeAuthTab=button.dataset.authTab;
-  if(activeAuthTab==="login"||activeAuthTab==="signup")authMode=activeAuthTab;
-  else selectedAuthRole=activeAuthTab==="vendor"?"souvenir":"rgo";
+  selectedAuthRole=button.dataset.authTab==="vendor"?"souvenir":"rgo";
   $("loginUsername").value="";
   $("loginPassword").value="";
   $("confirmPassword").value="";
   updateLoginTabs();
 });
+$("authModeToggle").onclick=()=>{
+  authMode=authMode==="login"?"signup":"login";
+  $("loginUsername").value="";
+  $("loginPassword").value="";
+  $("confirmPassword").value="";
+  updateLoginTabs();
+};
 $("loginForm").onsubmit=handleLoginSubmit;
 $("logoutBtn").onclick=()=>applyRole(null);
 $("downloadInventoryReport").onclick=()=>downloadReportCsv("shopInventoryReport","inventory-report");
