@@ -1,16 +1,16 @@
 const DEFAULT_PRODUCTS = [
-  { id: crypto.randomUUID(), name: "Manila Ref Magnet", category: "Magnets", barcode: "1111", price: 120, stock: 25, image: "assets/magnet.svg" },
-  { id: crypto.randomUUID(), name: "Philippines Keychain", category: "Keychains", barcode: "2222", price: 80, stock: 30, image: "assets/keychain.svg" },
-  { id: crypto.randomUUID(), name: "Jeepney Miniature", category: "Decor", barcode: "3333", price: 350, stock: 12, image: "assets/jeepney.svg" },
-  { id: crypto.randomUUID(), name: "I ❤️ Manila Shirt", category: "Shirts", barcode: "4444", price: 450, stock: 18, image: "assets/shirt.svg" },
-  { id: crypto.randomUUID(), name: "Woven Coin Purse", category: "Bags", barcode: "5555", price: 150, stock: 20, image: "assets/purse.svg" },
-  { id: crypto.randomUUID(), name: "Wooden Carabao", category: "Decor", barcode: "3334", price: 280, stock: 8, image: "assets/carabao.svg" },
-  { id: crypto.randomUUID(), name: "Philippines Tote Bag", category: "Bags", barcode: "5556", price: 250, stock: 15, image: "assets/tote.svg" },
-  { id: crypto.randomUUID(), name: "Postcard Set", category: "Stationery", barcode: "6666", price: 100, stock: 35, image: "assets/postcard.svg" }
+  { id: crypto.randomUUID(), name: "Manila Ref Magnet", category: "Magnets", barcode: "A00000", categoryBarcodePrefix: "A00000", price: 120, stock: 25, image: "assets/magnet.svg" },
+  { id: crypto.randomUUID(), name: "Philippines Keychain", category: "Keychains", barcode: "B00000", categoryBarcodePrefix: "B00000", price: 80, stock: 30, image: "assets/keychain.svg" },
+  { id: crypto.randomUUID(), name: "Jeepney Miniature", category: "Decor", barcode: "C00000", categoryBarcodePrefix: "C00000", price: 350, stock: 12, image: "assets/jeepney.svg" },
+  { id: crypto.randomUUID(), name: "I ❤️ Manila Shirt", category: "Shirts", barcode: "D00000", categoryBarcodePrefix: "D00000", price: 450, stock: 18, image: "assets/shirt.svg" },
+  { id: crypto.randomUUID(), name: "Woven Coin Purse", category: "Bags", barcode: "E00000", categoryBarcodePrefix: "E00000", price: 150, stock: 20, image: "assets/purse.svg" },
+  { id: crypto.randomUUID(), name: "Wooden Carabao", category: "Decor", barcode: "C00001", categoryBarcodePrefix: "C00000", price: 280, stock: 8, image: "assets/carabao.svg" },
+  { id: crypto.randomUUID(), name: "Philippines Tote Bag", category: "Bags", barcode: "E00001", categoryBarcodePrefix: "E00000", price: 250, stock: 15, image: "assets/tote.svg" },
+  { id: crypto.randomUUID(), name: "Postcard Set", category: "Stationery", barcode: "F00000", categoryBarcodePrefix: "F00000", price: 100, stock: 35, image: "assets/postcard.svg" }
 ];
 
 const fallbackImages = ["assets/magnet.svg","assets/keychain.svg","assets/jeepney.svg","assets/shirt.svg","assets/purse.svg","assets/carabao.svg","assets/tote.svg","assets/postcard.svg"];
-const DEFAULT_CATEGORY_PREFIXES={Magnets:"1111",Keychains:"2222",Decor:"3333",Shirts:"4444",Bags:"5555",Stationery:"6666"};
+const DEFAULT_CATEGORY_PREFIXES={Magnets:"A00000",Keychains:"B00000",Decor:"C00000",Shirts:"D00000",Bags:"E00000",Stationery:"F00000"};
 const ROYALTY_RATE=5;
 
 const SHOPS_STORAGE_KEY = "likha_pos_shops";
@@ -57,51 +57,83 @@ function getCategoryBarcodePrefix(category){
   if(historical)return String(historical);
   const known=Object.entries(DEFAULT_CATEGORY_PREFIXES).find(([name])=>normalizedCategory(name)===categoryKey)?.[1];
   if(known)return known;
-  const usedPrefixes=new Set([
-    ...Object.values(DEFAULT_CATEGORY_PREFIXES),
-    ...products.map(product=>String(product.categoryBarcodePrefix||"")),
-    ...state.shops.flatMap(shop=>shop.sales).flatMap(sale=>sale.items.map(item=>String(item.categoryBarcodePrefix||"")))
+  const usedLetters=new Set([
+    ...Object.values(DEFAULT_CATEGORY_PREFIXES).map(prefix=>prefix[0]),
+    ...products.map(product=>String(product.categoryBarcodePrefix||"")[0]),
+    ...state.shops.flatMap(shop=>shop.sales).flatMap(sale=>sale.items.map(item=>String(item.categoryBarcodePrefix||"")[0]))
   ]);
-  for(let digit=1;digit<=9;digit++){
-    const prefix=String(digit).repeat(4);
-    if(!usedPrefixes.has(prefix))return prefix;
-  }
-  let prefix=10000;
-  while([...usedPrefixes].some(used=>Number(used)<prefix+1000&&Number(used)+1000>prefix))prefix+=1000;
-  return String(prefix);
+  const letter=Array.from("ABCDEFGHIJKLMNOPQRSTUVWXYZ").find(candidate=>!usedLetters.has(candidate));
+  if(!letter)throw new Error("No unused category barcode letters remain.");
+  return `${letter}00000`;
 }
 function getNextCategoryBarcode(category,ignoreProductId=""){
   const prefix=getCategoryBarcodePrefix(category);
+  const letter=prefix[0];
   const existing=new Set(state.shops.flatMap(shop=>shop.products)
     .filter(product=>product.id!==ignoreProductId)
     .map(product=>String(product.barcode||"").trim()));
   const categoryProducts=state.shops.flatMap(shop=>shop.products)
     .filter(product=>normalizedCategory(product.category)===normalizedCategory(category)&&product.id!==ignoreProductId);
   const lastCategoryCode=categoryProducts.reduce((last,product)=>{
-    const code=Number(product.barcode);
-    return Number.isInteger(code)&&code>=Number(prefix)&&code<Number(prefix)+1000?Math.max(last,code):last;
-  },Number(prefix)-1);
-  let next=Math.max(Number(prefix),lastCategoryCode+1);
-  while(existing.has(String(next)))next++;
-  return String(next);
+    const match=String(product.barcode||"").match(new RegExp(`^${letter}(\\d{5})$`));
+    return match?Math.max(last,Number(match[1])):last;
+  },-1);
+  let next=lastCategoryCode+1;
+  let barcode=`${letter}${String(next).padStart(5,"0")}`;
+  while(existing.has(barcode)){
+    next++;
+    barcode=`${letter}${String(next).padStart(5,"0")}`;
+  }
+  if(next>99999)throw new Error(`The ${category} barcode series has reached its five-digit limit.`);
+  return barcode;
 }
-function getSoldUnitCount(categoryPrefix,sales=state.shops.flatMap(shop=>shop.sales)){
-  const prefix=String(categoryPrefix||"");
-  return sales.reduce((count,sale)=>count+sale.items.reduce((itemCount,item)=>
-    itemCount+(String(item.categoryBarcodePrefix||"")===prefix?(Number(item.qty)||0):0),0),0);
+function getUnitBarcodeNumber(barcode,category){
+  const letter=getCategoryBarcodePrefix(category)[0];
+  const match=String(barcode||"").match(new RegExp(`^${letter}(\\d{6})$`));
+  return match?Number(match[1]):0;
 }
-const seenBarcodes=new Set();
-shops.forEach(shop=>{
-  shop.products.forEach(product=>{
-    const barcode=String(product.barcode||"").trim();
-    if(!barcode||seenBarcodes.has(barcode))product.barcode=getNextCategoryBarcode(product.category,product.id);
-    seenBarcodes.add(product.barcode);
-    const stock=Number(product.stock);
-    product.stock=Number.isInteger(stock)&&stock>=0?stock:0;
-    const actualStock=Number(product.actualStock);
-    product.actualStock=Number.isInteger(actualStock)&&actualStock>=0?actualStock:product.stock;
+function getLastUnitBarcodeNumber(category){
+  let lastNumber=0;
+  state.shops.forEach(shop=>{
+    shop.products.forEach(product=>(Array.isArray(product.unitBarcodes)?product.unitBarcodes:[]).forEach(unit=>{
+      const number=getUnitBarcodeNumber(unit.barcode,category);
+      if(number)lastNumber=Math.max(lastNumber,number);
+    }));
+    shop.sales.forEach(sale=>sale.items.forEach(item=>getItemSoldBarcodes(item,"").forEach(barcode=>{
+      const number=getUnitBarcodeNumber(barcode,category);
+      if(number)lastNumber=Math.max(lastNumber,number);
+    })));
   });
-});
+  return lastNumber;
+}
+function getNextUnitBarcode(category){
+  const letter=getCategoryBarcodePrefix(category)[0];
+  const next=getLastUnitBarcodeNumber(category)+1;
+  if(next>999999)throw new Error(`The ${category} unit barcode sequence has reached its limit.`);
+  return `${letter}${String(next).padStart(6,"0")}`;
+}
+function syncProductStock(product){
+  const units=Array.isArray(product.unitBarcodes)?product.unitBarcodes:[];
+  product.stock=units.filter(unit=>unit.systemTracked!==false&&unit.status!=="sold").length;
+  product.actualStock=units.filter(unit=>unit.status==="in-stock"||(unit.systemTracked===false&&unit.status==="unaccounted")).length;
+}
+function addStockUnits(product,quantity,status="in-stock",systemTracked=true){
+  if(!Number.isInteger(quantity)||quantity<0)throw new Error("Stock quantity must be a whole number greater than or equal to zero.");
+  if(quantity===0)return;
+  const first=getLastUnitBarcodeNumber(product.category)+1;
+  if(first+quantity-1>999999)throw new Error(`The ${product.category} unit barcode sequence has reached its limit.`);
+  const letter=getCategoryBarcodePrefix(product.category)[0];
+  for(let index=0;index<quantity;index++){
+    product.unitBarcodes.push({barcode:`${letter}${String(first+index).padStart(6,"0")}`,status,systemTracked});
+  }
+  syncProductStock(product);
+}
+shops.forEach(shop=>shop.products.forEach(product=>{
+  const stock=Number(product.stock);
+  product.stock=Number.isInteger(stock)&&stock>=0?stock:0;
+  const actualStock=Number(product.actualStock);
+  product.actualStock=Number.isInteger(actualStock)&&actualStock>=0?actualStock:product.stock;
+}));
 
 const LOGIN_CREDENTIALS = {
   souvenir: { username: "shopowner", password: "owner123" },
@@ -118,9 +150,6 @@ const DOCUMENTS_STORAGE_KEY = "sintalaan_documents";
 let documents = [];
 const PAYMENT_REMINDERS_STORAGE_KEY="sintalaan_payment_reminders";
 let paymentReminders=[];
-const DAILY_REPORT_DETAILS_KEY="sintalaan_daily_report_details";
-let dailyReportDetails={};
-let dailyReportStorageError=false;
 const SETTINGS_STORAGE_KEY = "sintalaan_settings";
 let lowStockThreshold = 5;
 try {
@@ -134,12 +163,6 @@ try {
   paymentReminders=Array.isArray(savedReminders)?savedReminders:[];
 } catch (storageError) {
   console.error("Could not read payment reminders.",storageError);
-}
-try {
-  const savedReportDetails=JSON.parse(localStorage.getItem(DAILY_REPORT_DETAILS_KEY)||"{}");
-  dailyReportDetails=savedReportDetails&&typeof savedReportDetails==="object"&&!Array.isArray(savedReportDetails)?savedReportDetails:{};
-} catch (storageError) {
-  console.error("Could not read daily report details.",storageError);
 }
 try {
   const savedSettings = JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY) || "{}");
@@ -172,43 +195,37 @@ function saveData(){
     localStorage.setItem("likha_pos_sales",JSON.stringify(state.sales));
   }
 }
-const DEFAULT_BARCODE_MIGRATION_KEY="sintalaan_default_barcode_migration_v3";
-const needsDefaultBarcodeMigration=localStorage.getItem(DEFAULT_BARCODE_MIGRATION_KEY)!=="1";
-if(needsDefaultBarcodeMigration){
+const DEFAULT_BARCODE_MIGRATION_KEY="sintalaan_category_letter_barcodes_v1";
+if(localStorage.getItem(DEFAULT_BARCODE_MIGRATION_KEY)!=="1"){
   const allProducts=shops.flatMap(shop=>shop.products);
+  const categoryNames=new Map();
+  allProducts.forEach(product=>categoryNames.set(normalizedCategory(product.category),product.category||"Uncategorized"));
+  shops.flatMap(shop=>shop.sales).forEach(sale=>(Array.isArray(sale.items)?sale.items:[]).forEach(item=>{
+    const category=item.category||allProducts.find(product=>product.id===item.productId)?.category||"Uncategorized";
+    categoryNames.set(normalizedCategory(category),category);
+  }));
+  const categoryPrefixes=new Map(Object.entries(DEFAULT_CATEGORY_PREFIXES).map(([name,prefix])=>[normalizedCategory(name),prefix]));
+  const usedLetters=new Set(Object.values(DEFAULT_CATEGORY_PREFIXES).map(prefix=>prefix[0]));
+  categoryNames.forEach((category,key)=>{
+    if(categoryPrefixes.has(key))return;
+    const letter=Array.from("ABCDEFGHIJKLMNOPQRSTUVWXYZ").find(candidate=>!usedLetters.has(candidate));
+    if(!letter)throw new Error("No unused category barcode letters remain.");
+    categoryPrefixes.set(key,`${letter}00000`);
+    usedLetters.add(letter);
+  });
   const productsByCategory=new Map();
   allProducts.forEach(product=>{
     const key=normalizedCategory(product.category);
     if(!productsByCategory.has(key))productsByCategory.set(key,[]);
     productsByCategory.get(key).push(product);
   });
-  const assignedPrefixes=new Set();
   productsByCategory.forEach((products,key)=>{
-    const category=products[0]?.category;
-    const configuredPrefix=Object.entries(DEFAULT_CATEGORY_PREFIXES)
-      .find(([name])=>normalizedCategory(name)===key)?.[1];
-    const existingPrefix=products.find(product=>/^\d{4}$/.test(String(product.categoryBarcodePrefix||"")))?.categoryBarcodePrefix;
-    const firstDefault=products.find(product=>DEFAULT_PRODUCTS.some(entry=>entry.name===product.name&&entry.category===product.category));
-    const oldRepeatedPrefix=String(firstDefault?.barcode||products[0]?.barcode||"").match(/^(\d)\1{3}$/)?.[0];
-    let prefix=configuredPrefix||existingPrefix||oldRepeatedPrefix;
-    if(!prefix||assignedPrefixes.has(String(prefix))){
-      for(let digit=1;digit<=9;digit++){
-        const candidate=String(digit).repeat(4);
-        if(!assignedPrefixes.has(candidate)){prefix=candidate;break}
-      }
-    }
-    if(!prefix||assignedPrefixes.has(String(prefix))){
-      let candidate=10000;
-      while([...assignedPrefixes].some(used=>Number(used)<candidate+1000&&Number(used)+1000>candidate))candidate+=1000;
-      prefix=String(candidate);
-    }
-    prefix=String(prefix);
-    assignedPrefixes.add(prefix);
+    const prefix=categoryPrefixes.get(key)||"Z00000";
     products.forEach((product,index)=>{
+      if(index>99999)throw new Error(`The ${product.category} barcode series has reached its five-digit limit.`);
       product.categoryBarcodePrefix=prefix;
-      product.barcode=String(Number(prefix)+index);
+      product.barcode=`${prefix[0]}${String(index).padStart(5,"0")}`;
     });
-    if(!category)console.warn("A product category is blank; assigned a fallback barcode series.");
   });
   const productsById=new Map(allProducts.map(product=>[product.id,product]));
   const orderedSales=shops.flatMap(shop=>shop.sales.map((sale,index)=>({shop,sale,index})))
@@ -218,7 +235,7 @@ if(needsDefaultBarcodeMigration){
     (Array.isArray(sale.items)?sale.items:[]).forEach(item=>{
       const product=productsById.get(item.productId)||shop.products.find(entry=>entry.name===item.name);
       const category=product?.category||item.category||"Uncategorized";
-      const prefix=product?.categoryBarcodePrefix||getCategoryBarcodePrefix(category);
+      const prefix=categoryPrefixes.get(normalizedCategory(category))||"Z00000";
       const key=normalizedCategory(category);
       const count=soldCounts.get(key)||0;
       item.category=category;
@@ -229,6 +246,54 @@ if(needsDefaultBarcodeMigration){
       soldCounts.set(key,count+(Number(item.qty)||0));
     });
   });
+  saveData();
+  localStorage.setItem(DEFAULT_BARCODE_MIGRATION_KEY,"1");
+}
+const UNIT_BARCODE_MIGRATION_KEY="sintalaan_stock_unit_barcodes_v1";
+if(localStorage.getItem(UNIT_BARCODE_MIGRATION_KEY)!=="1"){
+  const orderedSales=shops.flatMap(shop=>shop.sales.map((sale,index)=>({shop,sale,index})))
+    .sort((a,b)=>new Date(a.sale.date)-new Date(b.sale.date)||a.index-b.index);
+  const soldByProduct=new Map();
+  orderedSales.forEach(({shop,sale})=>{
+    (Array.isArray(sale.items)?sale.items:[]).forEach(item=>{
+      const product=shop.products.find(entry=>entry.id===item.productId)||shop.products.find(entry=>entry.name===item.name);
+      const category=product?.category||item.category||"Uncategorized";
+      const key=product?`${shop.id}|${product.id}`:"";
+      const validExisting=getItemSoldBarcodes(item,"").filter(barcode=>getUnitBarcodeNumber(barcode,category)>0);
+      const soldBarcodes=[];
+      for(let index=0;index<(Number(item.qty)||0);index++){
+        let barcode=validExisting[index];
+        if(!barcode||orderedSales.some(({shop:saleShop,sale:saleRecord})=>saleShop===shop&&saleRecord!==sale&&saleRecord.items.some(saleItem=>getItemSoldBarcodes(saleItem,"").includes(barcode)))){
+          barcode=getNextUnitBarcode(category);
+          item.soldBarcodes=[...(item.soldBarcodes||[]),barcode];
+        }
+        soldBarcodes.push(barcode);
+      }
+      item.soldBarcodes=soldBarcodes;
+      item.soldBarcode=soldBarcodes[0]||"";
+      if(!product)return;
+      if(!soldByProduct.has(key))soldByProduct.set(key,[]);
+      soldByProduct.get(key).push(...soldBarcodes.map(barcode=>({barcode,status:"sold",systemTracked:true,saleId:sale.id})));
+    });
+  });
+  shops.forEach(shop=>shop.products.forEach(product=>{
+    const key=`${shop.id}|${product.id}`;
+    const expectedStock=product.stock;
+    const physicalStock=product.actualStock;
+    product.unitBarcodes=soldByProduct.get(key)||[];
+    const currentStock=product.unitBarcodes.filter(unit=>unit.systemTracked!==false&&unit.status!=="sold").length;
+    const currentPhysical=product.unitBarcodes.filter(unit=>unit.status==="in-stock").length;
+    const systemUnits=Math.max(0,expectedStock-currentStock);
+    const physicalUnits=Math.min(systemUnits,Math.max(0,physicalStock-currentPhysical));
+    addStockUnits(product,physicalUnits);
+    const missingUnits=systemUnits-physicalUnits;
+    addStockUnits(product,missingUnits,"unaccounted",true);
+    const extraPhysicalUnits=Math.max(0,physicalStock-currentPhysical-physicalUnits);
+    addStockUnits(product,extraPhysicalUnits,"unaccounted",false);
+    syncProductStock(product);
+  }));
+  saveData();
+  localStorage.setItem(UNIT_BARCODE_MIGRATION_KEY,"1");
 }
 function getCategories(){return ["All",...new Set(state.products.map(p=>p.category))]}
 
@@ -248,12 +313,13 @@ function renderProducts(){
   els.productCountText.textContent=`${filtered.length} product${filtered.length===1?"":"s"} available`;
   if(!filtered.length){els.productGrid.innerHTML=`<div class="empty-state"><div class="empty-icon">🔎</div><strong>No products found</strong><span>Try another search or category.</span></div>`;return}
   els.productGrid.innerHTML=filtered.map((p,i)=>{
-    const cls=p.stock===0?"out":p.stock<=lowStockThreshold?"low":"";
+    const availableStock=(p.unitBarcodes||[]).filter(unit=>unit.status==="in-stock").length;
+    const cls=availableStock===0?"out":availableStock<=lowStockThreshold?"low":"";
     const img=p.image||fallbackImages[i%fallbackImages.length];
     return `<article class="product-card">
-      <div class="product-image-wrap"><img class="product-image" src="${img}" alt="${escapeHtml(p.name)}"><span class="stock-badge ${cls}">${p.stock===0?"Sold out":`${p.stock} left`}</span></div>
+      <div class="product-image-wrap"><img class="product-image" src="${img}" alt="${escapeHtml(p.name)}"><span class="stock-badge ${cls}">${availableStock===0?"Sold out":`${availableStock} left`}</span></div>
       <div class="product-info"><span class="category-pill">${escapeHtml(p.category)}</span><h3>${escapeHtml(p.name)}</h3>
-      <div class="product-bottom"><span class="price">${peso.format(p.price)}</span><button class="add-btn" data-add="${p.id}" ${p.stock===0?"disabled":""}>+</button></div></div>
+      <div class="product-bottom"><span class="price">${peso.format(p.price)}</span><button class="add-btn" data-add="${escapeHtml(p.id)}" ${availableStock===0?"disabled":""}>+</button></div></div>
     </article>`;
   }).join("");
   document.querySelectorAll("[data-add]").forEach(btn=>btn.onclick=()=>addToCart(btn.dataset.add));
@@ -281,17 +347,83 @@ function renderRegisteredProducts(){
   });
   table.querySelectorAll("[data-delete]").forEach(button=>button.onclick=()=>deleteProduct(button.dataset.delete));
 }
+function unitInventoryMarkup(product,canEdit){
+  const units=Array.isArray(product.unitBarcodes)?product.unitBarcodes:[];
+  const unaccounted=units.filter(unit=>unit.status==="unaccounted").length;
+  const unitRows=units.map(unit=>{
+    const status=unit.status==="unaccounted"
+      ?unit.systemTracked===false?"Unaccounted · extra physical unit":"Unaccounted · missing"
+      :unit.status==="sold"?"Sold":"In stock";
+    const action=canEdit&&unit.status!=="sold"
+      ?`<button type="button" class="small-btn" data-reconcile-unit="${escapeHtml(unit.barcode)}" data-product-id="${escapeHtml(product.id)}">${unit.status==="unaccounted"?"Mark found":"Mark missing"}</button>`
+      :`<span class="unit-status-label ${unit.status}">${status}</span>`;
+    return `<li><code class="barcode-cell">${escapeHtml(unit.barcode)}</code><span class="unit-status-label ${escapeHtml(unit.status)}">${status}</span>${action}</li>`;
+  }).join("");
+  return `<details class="unit-reconcile"><summary>${units.length} unit barcode${units.length===1?"":"s"}${unaccounted?` · ${unaccounted} unaccounted`:""}</summary>${canEdit?`<button type="button" class="small-btn add-stock-unit" data-add-stock="${escapeHtml(product.id)}">＋ Add stock</button>`:""}<ul>${unitRows||"<li>No unit barcodes assigned.</li>"}</ul></details>`;
+}
+function reconcileInventoryUnit(productId,barcode){
+  if(state.role!=="souvenir")return;
+  const product=state.products.find(entry=>entry.id===productId);
+  const unit=product?.unitBarcodes?.find(entry=>entry.barcode===barcode);
+  if(!product||!unit||unit.status==="sold")return;
+  if(unit.status==="unaccounted"){
+    unit.status="in-stock";
+    unit.systemTracked=true;
+    delete unit.reconciledAt;
+  }else{
+    unit.status="unaccounted";
+    unit.systemTracked=true;
+    unit.unaccountedAt=new Date().toISOString();
+  }
+  syncProductStock(product);
+  product.updatedAt=new Date().toISOString();
+  saveData();
+  renderProducts();
+  renderInventory();
+  renderRegisteredProducts();
+  renderReportsOverview();
+  renderAdminDashboard();
+}
+function promptAddStock(productId){
+  if(state.role!=="souvenir")return;
+  const product=state.products.find(entry=>entry.id===productId);
+  if(!product)return;
+  const value=window.prompt(`How many ${product.name} units are being added to stock?`);
+  if(value===null)return;
+  const quantity=Number(value);
+  if(!Number.isInteger(quantity)||quantity<1){
+    showToast("Enter a whole number greater than zero.");
+    return;
+  }
+  try{
+    addStockUnits(product,quantity);
+  }catch(error){
+    alert(error.message);
+    return;
+  }
+  product.updatedAt=new Date().toISOString();
+  saveData();
+  renderProducts();
+  renderInventory();
+  renderRegisteredProducts();
+  renderReportsOverview();
+  renderAdminDashboard();
+}
 function addScannedProduct(event){
   event.preventDefault();
-  const barcode=$("barcodeInput").value.trim().toLowerCase();
+  const barcode=$("barcodeInput").value.trim().toUpperCase();
   const message=$("barcodeMessage");
-  if(!barcode){message.textContent="Scan a barcode or enter an item code.";return}
-  const product=state.products.find(item=>String(item.barcode||"").trim().toLowerCase()===barcode);
-  if(!product){message.textContent=`No registered product matches “${$("barcodeInput").value.trim()}”. Add it in Registered Products.`;$("barcodeInput").select();return}
-  if(addToCart(product.id)){
-    message.textContent=`${product.name} added to the cart.`;
+  if(!barcode){message.textContent="Scan a unit barcode.";return}
+  const product=state.products.find(item=>item.unitBarcodes?.some(unit=>String(unit.barcode).toUpperCase()===barcode));
+  const unit=product?.unitBarcodes.find(entry=>String(entry.barcode).toUpperCase()===barcode);
+  if(!product||!unit){message.textContent=`No stock unit matches “${$("barcodeInput").value.trim()}”. Scan a unit barcode, not the catalog barcode.`;$("barcodeInput").select();return}
+  if(unit.status==="sold"){message.textContent=`${barcode} has already been sold.`;$("barcodeInput").select();return}
+  if(unit.status==="unaccounted"){message.textContent=`${barcode} is marked Unaccounted. Reconcile it in Inventory before selling.`;$("barcodeInput").select();return}
+  if(state.cart.some(item=>item.unitBarcodes.includes(barcode))){message.textContent=`${barcode} is already in this cart.`;$("barcodeInput").select();return}
+  if(addToCart(product.id,barcode)){
+    message.textContent=`${product.name} · ${barcode} added to the cart.`;
     $("barcodeInput").value="";
-  }else message.textContent=`${product.name} could not be added. Check available stock.`;
+  }else message.textContent=`${barcode} could not be added. Check available stock.`;
   $("barcodeInput").focus();
 }
 function setVendorView(view){
@@ -305,16 +437,23 @@ function setVendorView(view){
   if(isProducts)renderRegisteredProducts();
 }
 
-function addToCart(id){
+function addToCart(id,unitBarcode=""){
   const p=state.products.find(x=>x.id===id); if(!p)return false;
   if(p.stock<=0){showToast(`${p.name} is out of stock`);return false}
-  const item=state.cart.find(x=>x.productId===id); const qty=item?item.qty:0;
-  if(qty>=p.stock){showToast("Not enough stock available");return false}
-  item?item.qty++:state.cart.push({productId:id,qty:1}); renderCart(); showToast(`${p.name} added to cart`);return true;
+  const reserved=new Set(state.cart.flatMap(item=>item.unitBarcodes||[]));
+  const unit=(p.unitBarcodes||[]).find(entry=>entry.status==="in-stock"&&!reserved.has(entry.barcode)&&(!unitBarcode||entry.barcode===unitBarcode));
+  if(!unit){showToast(unitBarcode?"That stock unit is not available":"No available stock units");return false}
+  const item=state.cart.find(x=>x.productId===id);
+  item?(item.qty++,item.unitBarcodes.push(unit.barcode)):state.cart.push({productId:id,qty:1,unitBarcodes:[unit.barcode]});
+  renderCart(); showToast(`${p.name} added to cart`);return true;
 }
 function updateQty(id,change){
   const item=state.cart.find(x=>x.productId===id),p=state.products.find(x=>x.id===id); if(!item||!p)return;
-  const q=item.qty+change; if(q<=0)state.cart=state.cart.filter(x=>x.productId!==id); else if(q<=p.stock)item.qty=q; else alert("Not enough stock available."); renderCart();
+  if(change>0){addToCart(id);return}
+  const q=item.qty+change;
+  if(q<=0)state.cart=state.cart.filter(x=>x.productId!==id);
+  else{item.qty=q;item.unitBarcodes.pop()}
+  renderCart();
 }
 function removeFromCart(id){state.cart=state.cart.filter(x=>x.productId!==id);renderCart()}
 function getCartDetails(){return state.cart.map(item=>{const product=state.products.find(p=>p.id===item.productId);return {...item,product,lineTotal:product?product.price*item.qty:0}}).filter(x=>x.product)}
@@ -329,6 +468,7 @@ function renderCart(){
   else els.cartItems.innerHTML=items.map(i=>`<div class="cart-item">
     <img class="cart-thumb" src="${i.product.image||"assets/magnet.svg"}" alt="">
     <div><div class="cart-item-top"><div><div class="cart-item-name">${escapeHtml(i.product.name)}</div><div class="cart-item-price">${peso.format(i.product.price)} each</div></div><strong>${peso.format(i.lineTotal)}</strong></div>
+    <small class="cart-unit-barcodes">Units: ${i.unitBarcodes.map(escapeHtml).join(", ")}</small>
     <div class="cart-controls"><button class="qty-btn" data-dec="${i.productId}">−</button><span>${i.qty}</span><button class="qty-btn" data-inc="${i.productId}">+</button><button class="remove-btn" data-remove="${i.productId}">Remove</button></div></div></div>`).join("");
   document.querySelectorAll("[data-dec]").forEach(b=>b.onclick=()=>updateQty(b.dataset.dec,-1));
   document.querySelectorAll("[data-inc]").forEach(b=>b.onclick=()=>updateQty(b.dataset.inc,1));
@@ -346,21 +486,24 @@ function checkout(){
   const items=getCartDetails(); if(!items.length){alert("Cart is empty.");return}
   const {subtotal,discount,total}=getTotals(),method=els.paymentMethod.value,cash=Number(els.cashInput.value)||0;
   if(method==="Cash"&&cash<total){alert("Cash received is not enough.");return}
-  for(const i of items){const p=state.products.find(x=>x.id===i.productId);if(!p||p.stock<i.qty){alert(`Insufficient stock for ${i.product?.name||"an item"}.`);return}}
+  for(const i of items){
+    const p=state.products.find(x=>x.id===i.productId);
+    const units=(p?.unitBarcodes||[]).filter(unit=>i.unitBarcodes.includes(unit.barcode)&&unit.status==="in-stock");
+    if(!p||units.length!==i.qty||new Set(i.unitBarcodes).size!==i.qty){alert(`One or more selected units for ${i.product?.name||"an item"} are no longer available. Review the cart and scan again.`);return}
+  }
   items.forEach(i=>{
     const product=state.products.find(x=>x.id===i.productId);
-    product.stock-=i.qty;
-    product.actualStock=Math.max(0,(Number(product.actualStock)||0)-i.qty);
+    product.unitBarcodes.forEach(unit=>{
+      if(i.unitBarcodes.includes(unit.barcode)){
+        unit.status="sold";
+        unit.soldAt=new Date().toISOString();
+      }
+    });
+    syncProductStock(product);
   });
-  const soldUnitCounts=new Map();
   const sale={id:`OR-${Date.now().toString().slice(-8)}`,date:new Date().toISOString(),items:items.map(i=>{
     const categoryPrefix=i.product.categoryBarcodePrefix||getCategoryBarcodePrefix(i.product.category);
-    const categoryKey=normalizedCategory(i.product.category);
-    const previousCount=soldUnitCounts.has(categoryKey)
-      ?soldUnitCounts.get(categoryKey)
-      :getSoldUnitCount(categoryPrefix);
-    const soldBarcodes=getSoldBarcodes(categoryPrefix,i.qty,previousCount);
-    soldUnitCounts.set(categoryKey,previousCount+i.qty);
+    const soldBarcodes=[...i.unitBarcodes];
     return {productId:i.productId,name:i.product.name,barcode:i.product.barcode,categoryBarcodePrefix:categoryPrefix,soldBarcodes,soldBarcode:soldBarcodes[0]||categoryPrefix,category:i.product.category,costPrice:i.product.costPrice!==null&&i.product.costPrice!==undefined&&Number.isFinite(Number(i.product.costPrice))?Number(i.product.costPrice):null,price:i.product.price,qty:i.qty,lineTotal:i.lineTotal};
   }),subtotal,discount,total,paymentMethod:method,cashReceived:method==="Cash"?cash:total,change:method==="Cash"?Math.max(cash-total,0):0};
   state.sales.unshift(sale);saveData();clearCart();renderProducts();renderInventory();renderRegisteredProducts();renderSales();renderReportsOverview();renderAdminDashboard();showReceipt(sale);
@@ -369,34 +512,105 @@ function renderInventory(){
   const canEdit=state.role==="souvenir"||state.role==="rgo";
   $("productForm").classList.toggle("hidden",!canEdit);
   $("inventoryActionsHeader").classList.toggle("hidden",!canEdit);
-  if(!state.products.length){els.inventoryTable.innerHTML=`<tr><td colspan="${canEdit?8:7}">No products.</td></tr>`;return}
+  if(!state.products.length){els.inventoryTable.innerHTML=`<tr><td colspan="${canEdit?9:8}">No products.</td></tr>`;return}
+  const canReconcile=state.role==="souvenir";
   els.inventoryTable.innerHTML=state.products.map(p=>{
     const stock=Number(p.stock)||0,actualStock=Number(p.actualStock)||0,unaccounted=stock!==actualStock;
     const status=unaccounted?"Unaccounted":stock===0?"Sold":"In stock";
-    return `<tr><td>${escapeHtml(p.name)}</td><td><code class="barcode-cell">${escapeHtml(p.barcode||"")}</code></td><td>${escapeHtml(p.category)}</td><td>${peso.format(p.price)}</td><td>${stock}</td><td>${actualStock}</td><td><span class="inventory-status ${unaccounted?"unaccounted":stock===0?"out":"in"}">${unaccounted?"⚠ RGO · ":""}${status}</span></td>${canEdit?`<td><button class="small-btn" data-edit="${escapeHtml(p.id)}">Edit</button> <button class="small-btn danger-text" data-delete="${escapeHtml(p.id)}">Delete</button></td>`:""}</tr>`;
+    return `<tr><td>${escapeHtml(p.name)}</td><td><code class="barcode-cell">${escapeHtml(p.barcode||"")}</code></td><td>${escapeHtml(p.category)}</td><td>${peso.format(p.price)}</td><td>${stock}</td><td>${actualStock}</td><td><span class="inventory-status ${unaccounted?"unaccounted":stock===0?"out":"in"}">${unaccounted?"⚠ ":""}${status}</span></td><td>${unitInventoryMarkup(p,canReconcile)}</td>${canEdit?`<td><button class="small-btn" data-edit="${escapeHtml(p.id)}">Edit</button> <button class="small-btn danger-text" data-delete="${escapeHtml(p.id)}">Delete</button></td>`:""}</tr>`;
   }).join("");
   if(canEdit){
     document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>editProduct(b.dataset.edit));
     document.querySelectorAll("[data-delete]").forEach(b=>b.onclick=()=>deleteProduct(b.dataset.delete));
+    document.querySelectorAll("[data-reconcile-unit]").forEach(button=>button.onclick=()=>reconcileInventoryUnit(button.dataset.productId,button.dataset.reconcileUnit));
+    document.querySelectorAll("[data-add-stock]").forEach(button=>button.onclick=()=>promptAddStock(button.dataset.addStock));
   }
 }
-function editProduct(id){if(state.role!=="souvenir"&&state.role!=="rgo")return;const p=state.products.find(x=>x.id===id);if(!p)return;$("productId").value=p.id;$("productName").value=p.name;$("productBarcode").value=p.barcode||"";$("productCategory").value=p.category;$("productPrice").value=p.price;$("productCost").value=p.costPrice??"";$("productStock").value=p.stock;$("productActualStock").value=Number(p.actualStock)||0}
-function resetProductForm(){$("productForm").reset();$("productId").value="";$("productBarcode").value="";$("productActualStock").value="";$("productCost").value="";$("productFormMessage").textContent=""}
+function editProduct(id){
+  if(state.role!=="souvenir"&&state.role!=="rgo")return;
+  const product=state.products.find(entry=>entry.id===id);
+  if(!product)return;
+  $("productId").value=product.id;
+  $("productName").value=product.name;
+  $("productBarcode").value=product.barcode||"";
+  $("productCategory").value=product.category;
+  $("productPrice").value=product.price;
+  $("productCost").value=product.costPrice??"";
+  $("productStock").value=product.stock;
+  $("productActualStock").value=Number(product.actualStock)||0;
+  $("productStock").readOnly=true;
+  $("productActualStock").readOnly=true;
+  $("productCategory").readOnly=(product.unitBarcodes||[]).length>0;
+  $("productFormMessage").textContent=(product.unitBarcodes||[]).length
+    ?"Use the unit barcode controls below to reconcile missing stock or add new units."
+    :"";
+}
+function resetProductForm(){
+  $("productForm").reset();
+  $("productId").value="";
+  $("productBarcode").value="";
+  $("productActualStock").value="0";
+  $("productCost").value="";
+  $("productStock").readOnly=false;
+  $("productActualStock").readOnly=false;
+  $("productCategory").readOnly=false;
+  $("productFormMessage").textContent="";
+}
 function saveProduct(e){
   e.preventDefault(); if(state.role!=="souvenir"&&state.role!=="rgo")return; const id=$("productId").value,name=$("productName").value.trim(),category=$("productCategory").value.trim(),price=Number($("productPrice").value),costValue=$("productCost").value.trim(),costPrice=costValue===""?null:Number(costValue),stock=Number($("productStock").value),actualStock=Number($("productActualStock").value);
   if(!name||!category||!Number.isFinite(price)||price<0||(costPrice!==null&&(!Number.isFinite(costPrice)||costPrice<0))||!Number.isInteger(stock)||stock<0||!Number.isInteger(actualStock)||actualStock<0){$("productFormMessage").textContent="Enter valid non-negative prices and whole-number stock counts.";return}
   const existingProduct=id?state.products.find(product=>product.id===id):null;
-  let barcode=$("productBarcode").value.trim();
-  if(!barcode||(existingProduct&&normalizedCategory(existingProduct.category)!==normalizedCategory(category)&&barcode===existingProduct.barcode))barcode=getNextCategoryBarcode(category,id);
-  const categoryBarcodePrefix=getCategoryBarcodePrefix(category);
+  if(existingProduct&&normalizedCategory(existingProduct.category)!==normalizedCategory(category)&&(existingProduct.unitBarcodes||[]).length){
+    $("productFormMessage").textContent="A category cannot be changed after unit barcodes have been assigned. Create a new product in the correct category.";
+    return;
+  }
+  let barcode=$("productBarcode").value.trim().toUpperCase();
+  let categoryBarcodePrefix;
+  try{
+    if(!barcode||(existingProduct&&normalizedCategory(existingProduct.category)!==normalizedCategory(category)&&barcode===existingProduct.barcode))barcode=getNextCategoryBarcode(category,id);
+    categoryBarcodePrefix=getCategoryBarcodePrefix(category);
+  }catch(error){
+    $("productFormMessage").textContent=error.message;
+    return;
+  }
+  if(!new RegExp(`^${categoryBarcodePrefix[0]}\\d{5}$`).test(barcode)){
+    $("productBarcode").setCustomValidity(`Use ${categoryBarcodePrefix[0]} followed by five digits, such as ${categoryBarcodePrefix}.`);
+    $("productBarcode").reportValidity();
+    return;
+  }
   const duplicate=state.shops.some(shop=>shop.products.some(product=>product.id!==id&&String(product.barcode||"").trim().toLowerCase()===barcode.toLowerCase()));
   if(duplicate){$("productBarcode").setCustomValidity("This barcode is already assigned to another product.");$("productBarcode").reportValidity();return}
   $("productBarcode").setCustomValidity("");
-  if(id){const p=existingProduct;if(p)Object.assign(p,{name,barcode,category,categoryBarcodePrefix,price,costPrice,stock,actualStock,updatedAt:new Date().toISOString()})}
-  else state.products.push({id:crypto.randomUUID(),name,barcode,category,categoryBarcodePrefix,price,costPrice,stock,actualStock,updatedAt:new Date().toISOString(),image:fallbackImages[state.products.length%fallbackImages.length]});
+  if(id){
+    const product=existingProduct;
+    if(product){
+      Object.assign(product,{name,barcode,category,categoryBarcodePrefix,price,costPrice,updatedAt:new Date().toISOString()});
+      syncProductStock(product);
+    }
+  }else{
+    const product={id:crypto.randomUUID(),name,barcode,category,categoryBarcodePrefix,price,costPrice,stock:0,actualStock:0,unitBarcodes:[],updatedAt:new Date().toISOString(),image:fallbackImages[state.products.length%fallbackImages.length]};
+    try{
+      addStockUnits(product,stock);
+    }catch(error){
+      $("productFormMessage").textContent=error.message;
+      return;
+    }
+    state.products.push(product);
+  }
   saveData();resetProductForm();renderCategories();renderProducts();renderInventory();renderRegisteredProducts();renderReportsOverview();renderAdminDashboard();showToast("Product saved");
 }
-function deleteProduct(id){if(state.role!=="souvenir"&&state.role!=="rgo")return;const p=state.products.find(x=>x.id===id);if(!p||!confirm(`Delete "${p.name}"?`))return;state.products=state.products.filter(x=>x.id!==id);state.cart=state.cart.filter(x=>x.productId!==id);saveData();renderCategories();renderProducts();renderInventory();renderRegisteredProducts();renderCart();renderReportsOverview();renderAdminDashboard()}
+function deleteProduct(id){
+  if(state.role!=="souvenir"&&state.role!=="rgo")return;
+  const product=state.products.find(entry=>entry.id===id);
+  if(!product||!confirm(`Delete "${product.name}"?`))return;
+  if((product.unitBarcodes||[]).length||state.sales.some(sale=>sale.items.some(item=>item.productId===id))){
+    showToast("Products with unit barcode history cannot be deleted.");
+    return;
+  }
+  state.products=state.products.filter(entry=>entry.id!==id);
+  state.cart=state.cart.filter(item=>item.productId!==id);
+  saveData();renderCategories();renderProducts();renderInventory();renderRegisteredProducts();renderCart();renderReportsOverview();renderAdminDashboard();
+}
 function dateKey(date){return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`}
 function getVisibleSales(){
   if(state.role!=="rgo")return state.sales;
@@ -430,7 +644,16 @@ if($("registeredProductSearch"))$("registeredProductSearch").oninput=renderRegis
 $("posTab").onclick=()=>setVendorView("pos");
 $("registeredProductsTab").onclick=()=>setVendorView("products");
 $("registeredAddProduct").onclick=()=>{resetProductForm();renderInventory();openModal("inventoryModal");$("productName").focus()};
-$("generateBarcodeBtn").onclick=()=>{$("productBarcode").value=getNextCategoryBarcode($("productCategory").value,$("productId").value);$("productBarcode").setCustomValidity("");$("productBarcode").focus()};
+$("generateBarcodeBtn").onclick=()=>{
+  try{
+    $("productBarcode").value=getNextCategoryBarcode($("productCategory").value,$("productId").value);
+    $("productBarcode").setCustomValidity("");
+    $("productFormMessage").textContent="";
+    $("productBarcode").focus();
+  }catch(error){
+    $("productFormMessage").textContent=error.message;
+  }
+};
 $("productStock").oninput=()=>{if(!$("productId").value)$("productActualStock").value=$("productStock").value};
 $("productBarcode").oninput=()=>$("productBarcode").setCustomValidity("");
 document.querySelectorAll(".pay-method").forEach(btn=>btn.onclick=()=>{document.querySelectorAll(".pay-method").forEach(x=>x.classList.remove("active"));btn.classList.add("active");els.paymentMethod.value=btn.dataset.method;updateChange()});
@@ -518,7 +741,6 @@ function renderShopSelector(){
     +`<option value="__add_shop__">＋ Add another shop</option>`;
   selector.value=state.reportShopId;
   $("shopOverviewTitle").textContent=state.reportShopId==="__all_shops__"?"Consolidated Reports Overview":`${state.shops.find(shop=>shop.id===state.reportShopId)?.name||"Shop"} Reports Overview`;
-  loadDailyReportDetails();
   renderReportsOverview();
   renderAdminDashboard();
 }
@@ -1066,8 +1288,6 @@ function renderQuarterlySalesReport(reportShops,reportYear,quarter,quarterStartM
   const startLabel=new Date(reportYear,quarterStartMonth,1).toLocaleDateString("en-PH",{month:"short"});
   const endLabel=new Date(reportYear,quarterStartMonth+2,1).toLocaleDateString("en-PH",{month:"short"});
   const quarterLabel=`Q${quarter} ${reportYear} · ${startLabel} – ${endLabel}`;
-  $("quarterlyReportShopName").textContent=state.reportShopId==="__all_shops__"?"All registered shops":reportShops[0]?.name||"Shop";
-  $("quarterlyReportShopInfo").textContent=state.reportShopId==="__all_shops__"?reportShops.map(shop=>shop.name).join(" · ")||"No active shops":reportShops[0]?.name||"No active shop";
   $("quarterlyReportCaption").textContent=quarterLabel;
   $("quarterlyCaption").textContent=quarterLabel;
   $("quarterlyMtdReport").innerHTML=monthly.map(row=>`<tr><td>${escapeHtml(row.month)}</td><td>${peso.format(row.gross)}</td><td>${peso.format(row.net)}</td><td>${peso.format(row.royalty)}</td></tr>`).join("")+`<tr class="daily-report-total"><th>Quarter total</th><th>${peso.format(quarterGross)}</th><th>${peso.format(quarterNet)}</th><th>${peso.format(royalty)}</th></tr>`;
@@ -1084,21 +1304,12 @@ function renderQuarterlySalesReport(reportShops,reportYear,quarter,quarterStartM
   $("quarterlyCategoryReport").innerHTML=categories.length?categories.map(([name,total])=>`<tr><td>${escapeHtml(name)}</td><td>${total.units}</td><td>${peso.format(total.net)}</td><td>${quarterNet?`${(total.net/quarterNet*100).toFixed(1)}%`:"—"}</td></tr>`).join("")+`<tr class="daily-report-total"><th>Total</th><th>${sales.reduce((sum,{sale})=>sum+sale.items.reduce((subtotal,item)=>subtotal+(Number(item.qty)||0),0),0)}</th><th>${peso.format(quarterNet)}</th><th>${quarterNet?"100.0%":"—"}</th></tr>`:`<tr><td colspan="4">No sales recorded</td></tr>`;
   const payments=[...paymentTotals.entries()].sort((a,b)=>b[1].net-a[1].net);
   $("quarterlyPaymentReport").innerHTML=payments.length?payments.map(([name,total])=>`<tr><td>${escapeHtml(name)}</td><td>${total.receipts}</td><td>${peso.format(total.net)}</td><td>${quarterNet?`${(total.net/quarterNet*100).toFixed(1)}%`:"—"}</td></tr>`).join("")+`<tr class="daily-report-total"><th>Total</th><th>${sales.length}</th><th>${peso.format(quarterNet)}</th><th>${quarterNet?"100.0%":"—"}</th></tr>`:`<tr><td colspan="4">No sales recorded</td></tr>`;
-  const now=new Date();
-  const currentMonthIsSelected=reportYear===now.getFullYear()&&Math.floor(now.getMonth()/3)+1===quarter;
-  const mtdNet=currentMonthIsSelected?sales.reduce((sum,{sale})=>{
-    const saleDate=new Date(sale.date);
-    return saleDate.getMonth()===now.getMonth()&&saleDate.getDate()<=now.getDate()
-      ?sum+(Number(sale.total)||0):sum;
-  },0):0;
-  $("quarterlyReportSummary").innerHTML=`<div><span>Gross sales · 3 months</span><strong>${peso.format(quarterGross)}</strong></div><div><span>Month-to-date net sales</span><strong>${peso.format(mtdNet)}</strong></div><div><span>Royalty · ${ROYALTY_RATE}% of gross</span><strong>${peso.format(royalty)}</strong></div><div><span>Transactions</span><strong>${sales.length}</strong></div>`;
   $("quarterGrossSales").textContent=peso.format(quarterGross);
   $("quarterTransactions").textContent=sales.length.toLocaleString("en-PH");
 }
 function renderReportsOverview(){
   if(!$("dailySalesReport"))return;
   const reportShops=getReportShops();
-  renderDailySalesReport(reportShops);
   const today=dateKey(new Date());
   const reportFrom=$("rgoReportFrom").value||today;
   const reportTo=$("rgoReportTo").value||reportFrom;
@@ -1111,7 +1322,7 @@ function renderReportsOverview(){
   const quarterEnd=`${reportYear}-${String(quarterStartMonth+3).padStart(2,"0")}`;
   const dailyRows=reportShops.map(shop=>{
     const sales=shop.sales.filter(sale=>inRange(dateKey(new Date(sale.date))));
-    return {shop,sales,gross:sales.reduce((sum,sale)=>sum+(Number(sale.subtotal)||Number(sale.total)||0),0),discounts:sales.reduce((sum,sale)=>sum+(Number(sale.discount)||0),0),net:sales.reduce((sum,sale)=>sum+(Number(sale.total)||0),0)};
+    return {shop,sales,gross:sales.reduce((sum,sale)=>sum+(Number(sale.subtotal)||Number(sale.total)||0),0),discounts:sales.reduce((sum,sale)=>sum+(Number(sale.discount)||0),0),actual:sales.reduce((sum,sale)=>sum+(Number(sale.total)||0),0)};
   });
   const monthlyRows=reportShops.map(shop=>{
     const sales=shop.sales.filter(sale=>{
@@ -1136,19 +1347,20 @@ function renderReportsOverview(){
     count:summary.count+row.sales.length,
     gross:summary.gross+row.gross,
     discounts:summary.discounts+row.discounts,
-    net:summary.net+row.net
-  }),{count:0,gross:0,discounts:0,net:0});
+    actual:summary.actual+row.actual
+  }),{count:0,gross:0,discounts:0,actual:0});
   $("reportShopCount").textContent=reportShops.length;
   $("reportSaleCount").textContent=totals.count;
   $("reportSaleDateCaption").textContent=validRange
     ?`${new Date(`${reportFrom}T00:00:00`).toLocaleDateString("en-PH",{dateStyle:"medium"})} – ${new Date(`${reportTo}T00:00:00`).toLocaleDateString("en-PH",{dateStyle:"medium"})}`
     :"Invalid date range";
-  $("reportNetSales").textContent=peso.format(totals.net);
+  $("reportActualSales").textContent=peso.format(totals.actual);
   $("reportInventoryUnits").textContent=totalUnits.toLocaleString("en-PH");
   $("reportInventoryValue").textContent=`${peso.format(inventoryValue)} inventory value`;
   $("dailySalesReport").innerHTML=dailyRows.length
-    ?dailyRows.map(row=>`<tr><td>${escapeHtml(row.shop.name)}</td><td>${row.sales.length}</td><td>${peso.format(row.gross)}</td><td>${peso.format(row.discounts)}</td><td>${peso.format(row.net)}</td></tr>`).join("")
+    ?dailyRows.map(row=>`<tr><td>${escapeHtml(row.shop.name)}</td><td>${row.sales.length}</td><td>${peso.format(row.gross)}</td><td>${peso.format(row.discounts)}</td><td>${peso.format(row.actual)}</td></tr>`).join("")
     :`<tr><td colspan="5">No registered shops.</td></tr>`;
+  $("dailySalesReportTotals").innerHTML=`<tr class="daily-sales-total-row"><th>Total gross sales</th><th>${totals.count}</th><th>${peso.format(totals.gross)}</th><th>${peso.format(totals.discounts)}</th><th>${peso.format(totals.actual)}</th></tr>`;
   const soldRows=dailyRows.flatMap(({shop,sales})=>sales.flatMap(sale=>sale.items.flatMap(item=>{
     const product=shop.products.find(entry=>entry.id===item.productId);
     const baseBarcode=item.categoryBarcodePrefix||product?.categoryBarcodePrefix||item.barcode||product?.barcode;
@@ -1181,8 +1393,6 @@ function renderReportsOverview(){
     return {month:new Date(reportYear,monthIndex,1).toLocaleDateString("en-PH",{month:"long",year:"numeric"}),gross,discounts,net,royalty:Math.round((gross*royaltyRate/100+Number.EPSILON)*100)/100};
   });
   const totalRoyalty=monthlyStatement.reduce((sum,row)=>sum+row.royalty,0);
-  const monthlyGross=monthlyStatement.reduce((sum,row)=>sum+row.gross,0);
-  $("royaltySummary").innerHTML=`<div><span>Quarter gross sales</span><strong>${peso.format(monthlyGross)}</strong></div><div><span>Royalty rate</span><strong>${royaltyRate}%</strong></div><div><span>Total royalty · ${quarter}${quarter===1?"st":quarter===2?"nd":quarter===3?"rd":"th"} quarter</span><strong>${peso.format(totalRoyalty)}</strong></div><div><span>Net after royalty</span><strong>${peso.format(monthlyStatement.reduce((sum,row)=>sum+row.net,0)-totalRoyalty)}</strong></div>`;
   const monthTotals=monthlyStatement.reduce((total,row)=>({gross:total.gross+row.gross,discounts:total.discounts+row.discounts,net:total.net+row.net}),{gross:0,discounts:0,net:0});
   $("quarterlyFinancialReport").innerHTML=monthlyStatement.map(row=>`<tr><td>${escapeHtml(row.month)}</td><td>${peso.format(row.gross)}</td><td>${peso.format(row.discounts)}</td><td>${peso.format(row.net)}</td><td>${royaltyRate}%</td><td>${peso.format(row.royalty)}</td></tr>`).join("")+`<tr class="statement-total-row"><th>Total · Q${quarter} ${reportYear}</th><th>${peso.format(monthTotals.gross)}</th><th>${peso.format(monthTotals.discounts)}</th><th>${peso.format(monthTotals.net)}</th><th>${royaltyRate}%</th><th>${peso.format(totalRoyalty)}</th></tr>`;
   const quarterLabel=`Q${quarter} ${reportYear} · ${new Date(reportYear,quarterStartMonth,1).toLocaleDateString("en-PH",{month:"short"})} – ${new Date(reportYear,quarterStartMonth+2,1).toLocaleDateString("en-PH",{month:"short"})}`;
@@ -1197,10 +1407,14 @@ function renderReportsOverview(){
       const actualStock=Number(product.actualStock)||0;
       const unaccounted=actualStock!==stock;
       const status=unaccounted?"Unaccounted":stock===0?"Sold":"In stock";
+      const unaccountedUnits=(product.unitBarcodes||[]).filter(unit=>unit.status==="unaccounted");
+      const unaccountedBarcodes=unaccountedUnits.length
+        ?unaccountedUnits.map(unit=>`<code class="barcode-cell" title="${unit.systemTracked===false?"Extra physical unit not in system stock":"Missing expected unit"}">${escapeHtml(unit.barcode)}</code>`).join(" ")
+        :"—";
       const lastUpdated=product.updatedAt?new Date(product.updatedAt).toLocaleDateString("en-PH",{year:"numeric",month:"short",day:"numeric"}):"—";
-      return `<tr class="${unaccounted?"unaccounted-row":""}"><td>${escapeHtml(shop.name)}</td><td>PRD-${escapeHtml(product.id.slice(-6).toUpperCase())}</td><td><code class="barcode-cell">${escapeHtml(product.barcode||"—")}</code></td><td>${escapeHtml(product.name)}</td><td>${escapeHtml(product.category)}</td><td>${stock}</td><td>${actualStock}</td><td><span class="inventory-status ${unaccounted?"unaccounted":stock===0?"out":"in"}">${unaccounted?"⚠ RGO · ":""}${status}</span></td><td>${lastUpdated}</td><td>${soldByShop.get(shop.id)?.get(product.id)||soldByShop.get(shop.id)?.get(product.name)||0}</td><td>${peso.format(Number(product.price)||0)}</td><td>${peso.format(stock*(Number(product.price)||0))}</td></tr>`;
+      return `<tr class="${unaccounted?"unaccounted-row":""}"><td>${escapeHtml(shop.name)}</td><td>PRD-${escapeHtml(product.id.slice(-6).toUpperCase())}</td><td><code class="barcode-cell">${escapeHtml(product.barcode||"—")}</code></td><td>${escapeHtml(product.name)}</td><td>${escapeHtml(product.category)}</td><td>${stock}</td><td>${actualStock}</td><td><span class="inventory-status ${unaccounted?"unaccounted":stock===0?"out":"in"}">${unaccounted?"⚠ RGO · ":""}${status}</span></td><td>${unaccountedBarcodes}</td><td>${lastUpdated}</td><td>${soldByShop.get(shop.id)?.get(product.id)||soldByShop.get(shop.id)?.get(product.name)||0}</td><td>${peso.format(Number(product.price)||0)}</td><td>${peso.format(stock*(Number(product.price)||0))}</td></tr>`;
     }).join("")
-    :`<tr><td colspan="12">No inventory records for these shops.</td></tr>`;
+    :`<tr><td colspan="13">No inventory records for these shops.</td></tr>`;
   $("supportingDocumentsReport").innerHTML=receipts.length
     ?receipts.map(({shop,sale})=>`<tr><td>${escapeHtml(shop.name)}</td><td>${escapeHtml(sale.id)}</td><td>${new Date(sale.date).toLocaleString("en-PH")}</td><td>${escapeHtml(sale.paymentMethod||"")}</td><td>${peso.format(Number(sale.total)||0)}</td><td><button class="small-btn" data-report-receipt="${escapeHtml(shop.id)}|${escapeHtml(sale.id)}">View receipt</button></td></tr>`).join("")
     :`<tr><td colspan="6">No supporting receipts for this date.</td></tr>`;
@@ -1244,8 +1458,7 @@ function downloadReportCsv(tableBodyId,reportName){
   let rows;
   if(tableBodyId==="quarterlyFinancialReport"){
     const sheet=$("quarterlySalesReportSheet");
-    rows=[["Quarterly sales report"],[$("quarterlyReportShopName").textContent],[$("quarterlyReportCaption").textContent],[]];
-    Array.from($("quarterlyReportSummary").children).forEach(card=>rows.push([card.querySelector("span")?.textContent||"",card.querySelector("strong")?.textContent||""]));
+    rows=[["Quarterly sales report"],[$("quarterlyReportCaption").textContent],[]];
     sheet.querySelectorAll(".daily-report-section").forEach(section=>{
       rows.push([], [section.querySelector("h3").textContent]);
       Array.from(section.querySelector("table").rows).forEach(row=>rows.push(Array.from(row.cells,cell=>cell.textContent.trim())));
@@ -1268,6 +1481,75 @@ function downloadReportCsv(tableBodyId,reportName){
   const link=document.createElement("a");
   link.href=url;
   link.download=`${reportName}-${shopName}-${reportDate}.csv`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function downloadDailySalesExcel(){
+  const reportShops=getReportShops();
+  const today=dateKey(new Date());
+  const from=$("rgoReportFrom").value||today;
+  const to=$("rgoReportTo").value||from;
+  if(from>to){showToast("Choose a valid date range before downloading");return}
+  const sales=reportShops.flatMap(shop=>shop.sales
+    .filter(sale=>{
+      const date=dateKey(new Date(sale.date));
+      return date>=from&&date<=to;
+    })
+    .map(sale=>({shop,sale})));
+  const byShop=reportShops.map(shop=>{
+    const shopSales=sales.filter(entry=>entry.shop.id===shop.id).map(entry=>entry.sale);
+    return {
+      name:shop.name,
+      count:shopSales.length,
+      gross:shopSales.reduce((sum,sale)=>sum+(Number(sale.subtotal)||Number(sale.total)||0),0),
+      discounts:shopSales.reduce((sum,sale)=>sum+(Number(sale.discount)||0),0),
+      actual:shopSales.reduce((sum,sale)=>sum+(Number(sale.total)||0),0)
+    };
+  });
+  const total={count:0,gross:0,discounts:0,actual:0};
+  byShop.forEach(row=>{
+    total.count+=row.count;
+    total.gross+=row.gross;
+    total.discounts+=row.discounts;
+    total.actual+=row.actual;
+  });
+  const salesRows=[
+    ["Daily sales summary"],["Date range",from,to],[],
+    ["Shop","Transactions","Gross sales","Discounts","Actual sales"],
+    ...byShop.map(row=>[row.name,row.count,row.gross,row.discounts,row.actual]),
+    ["Total gross sales",total.count,total.gross,total.discounts,total.actual]
+  ];
+  const barcodeRows=[
+    ["Products sold by barcode"],["Date range",from,to],[],
+    ["Date","Shop","Receipt","Sold barcode","Product","Quantity","Amount"],
+    ...sales.flatMap(({shop,sale})=>sale.items.flatMap(item=>{
+      const product=shop.products.find(entry=>entry.id===item.productId);
+      const categoryBarcode=item.categoryBarcodePrefix||product?.categoryBarcodePrefix||item.barcode||product?.barcode||"";
+      const barcodes=getItemSoldBarcodes(item,categoryBarcode);
+      const quantity=Math.max(1,Number(item.qty)||1);
+      return Array.from({length:quantity},(_,index)=>[
+        dateKey(new Date(sale.date)),shop.name,sale.id,barcodes[index]||categoryBarcode,item.name,1,(Number(item.lineTotal)||0)/quantity
+      ]);
+    }))
+  ];
+  const receiptRows=[
+    ["Supporting receipts"],["Date range",from,to],[],
+    ["Shop","Receipt","Date","Payment method","Actual sales"],
+    ...sales.map(({shop,sale})=>[shop.name,sale.id,new Date(sale.date).toLocaleString("en-PH"),sale.paymentMethod||"",Number(sale.total)||0])
+  ];
+  const xmlEscape=value=>String(value??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&apos;");
+  const worksheet=(name,rows)=>`<Worksheet ss:Name="${xmlEscape(name)}"><Table>${rows.map(row=>`<Row>${row.map(value=>{
+    const numeric=typeof value==="number"&&Number.isFinite(value);
+    return `<Cell><Data ss:Type="${numeric?"Number":"String"}">${xmlEscape(value)}</Data></Cell>`;
+  }).join("")}</Row>`).join("")}</Table></Worksheet>`;
+  const workbook=`<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">${worksheet("Sales by Shop",salesRows)}${worksheet("Sold Barcodes",barcodeRows)}${worksheet("Receipts",receiptRows)}</Workbook>`;
+  const blob=new Blob(["\uFEFF",workbook],{type:"application/vnd.ms-excel;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement("a");
+  link.href=url;
+  link.download=`daily-sales-${from}-to-${to}.xls`;
   document.body.append(link);
   link.click();
   link.remove();
@@ -1458,6 +1740,7 @@ $("loginForm").onsubmit=handleLoginSubmit;
 $("logoutBtn").onclick=()=>applyRole(null);
 $("downloadInventoryReport").onclick=()=>downloadReportCsv("shopInventoryReport","inventory-report");
 $("downloadFinancialReport").onclick=()=>downloadReportCsv("quarterlyFinancialReport","financial-statement");
+$("downloadDailySalesExcel").onclick=downloadDailySalesExcel;
 document.querySelectorAll("[data-admin-view]").forEach(button=>button.onclick=()=>activateAdminView(button.dataset.adminView));
 ["sidebarAddShop","overviewAddShop"].forEach(id=>$(id).onclick=()=>selectShop("__add_shop__"));
 $("adminNotifications").onclick=()=>{renderNotifications();openModal("notificationModal")};
@@ -1465,7 +1748,6 @@ $("documentsBtn").onclick=()=>{renderDocuments("staff");openModal("staffDocument
 $("openSalesHistory").onclick=()=>{renderSales();openModal("salesModal")};
 $("manageShopInventory").onclick=()=>{if(state.reportShopId==="__all_shops__"){showToast("Select a shop before managing its products");return}renderInventory();openModal("inventoryModal")};
 $("forgotPasswordBtn").onclick=()=>{const error=$("loginError");error.textContent="Demo password recovery is not available. Contact your system administrator.";error.classList.remove("hidden")};
-$("printDailySalesReport").onclick=()=>window.print();
 window.addEventListener("afterprint",()=>document.body.classList.remove("print-quarterly"));
 $("printFinancialReport").onclick=()=>{
   document.body.classList.add("print-quarterly");
@@ -1482,13 +1764,6 @@ $("financialReportYear").value=String(new Date().getFullYear());
 $("financialReportQuarter").value=String(Math.floor(new Date().getMonth()/3)+1);
 $("financialReportYear").onchange=renderReportsOverview;
 $("financialReportQuarter").onchange=renderReportsOverview;
-if($("financialReportDate")){
-  $("financialReportDate").value=dateKey(new Date());
-  $("financialReportDate").onchange=()=>{loadDailyReportDetails();renderReportsOverview()};
-}
-dailyReportInputIds.forEach(id=>{
-  $(id).oninput=()=>{saveDailyReportDetails();renderReportsOverview()};
-});
 document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>closeModal(b.dataset.close));document.querySelectorAll(".modal").forEach(m=>m.onclick=e=>{if(e.target===m)closeModal(m.id)});
 if($("shopSelect"))$("shopSelect").onchange=event=>selectShop(event.target.value);
 ["rgoReportFrom","rgoReportTo"].forEach(id=>{
@@ -1503,10 +1778,6 @@ window.addEventListener("storage",event=>{
 function updateClock(){els.clock.textContent=new Date().toLocaleString("en-PH",{dateStyle:"medium",timeStyle:"short"})}setInterval(updateClock,1000);updateClock();
 renderShopSelector();
 saveData();
-if(needsDefaultBarcodeMigration){
-  try{localStorage.setItem(DEFAULT_BARCODE_MIGRATION_KEY,"1")}
-  catch(storageError){console.error("Could not save the default barcode migration marker.",storageError)}
-}
 renderCategories();renderProducts();renderRegisteredProducts();renderCart();renderInventory();renderSales();
 updateLoginTabs();
 renderAccounts();
