@@ -1,485 +1,225 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SinTalaan | PUP Resource Generation Office</title>
-  <link rel="stylesheet" href="styles.css" />
-</head>
-<body>
-  <section id="loginScreen" class="login-screen">
-    <div class="login-card">
-      <div class="auth-brand"><div class="auth-brand-mark">ST</div><div><strong>SinTalaan</strong><span>PUP Resource Generation Office</span></div></div>
-      <div class="login-heading">
-        <h1 id="authTitle">Shop account</h1>  
-        <p id="authSubtitle">Sign in to your Shop account.</p>
-      </div>
-      <div class="login-tabs" role="group" aria-label="Choose account type">
-        <button class="login-tab active" type="button" data-auth-tab="vendor" aria-pressed="true">Shop</button>
-        <button class="login-tab" type="button" data-auth-tab="admin" aria-pressed="false">Admin</button>
-      </div>
-      <form id="loginForm" class="login-form" novalidate>
-        <div id="loginRoleHint" class="login-role-hint">Shop account</div>
-        <label for="loginUsername">Email or username</label>
-        <input id="loginUsername" name="username" type="text" autocomplete="username" placeholder="Enter your email or username" required />
-        <label for="loginUserCode">Unique user code</label>
-        <input id="loginUserCode" name="userCode" type="password" autocomplete="off" placeholder="Enter your unique user code" required />
-        <label for="loginPassword">Password</label>
-        <input id="loginPassword" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required />
-        <button id="forgotPasswordBtn" class="forgot-password" type="button">Forgot password?</button>
-        <div id="confirmPasswordField" class="login-confirm-field hidden">
-          <label for="confirmPassword">Confirm password</label>
-          <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" placeholder="Confirm your password" />
-        </div>
-        <p id="loginError" class="login-error hidden" role="alert"></p>
-        <button id="loginSubmit" class="login-submit" type="submit">Log in <span aria-hidden="true">→</span></button>
-        <small id="demoCredentials" class="credential-note">Demo: shopowner / owner123</small>
-        <button id="authModeToggle" class="auth-mode-toggle" type="button">Create a Shop account</button>
-      </form>
-      <p class="prototype-note">Demo access only. For real accounts, use secure authentication on a backend.</p>
-    </div>
-  </section>
+*{box-sizing:border-box} :root{
+--ink:#30212a;--muted:#806d75;--paper:#f8f3f4;--card:#fff;--line:#eadde0;
+--accent:#852332;--accent2:#d7a65a;--navy:#781f2c;--green:#2b8a6e;--red:#d9534f;
+--shadow:0 14px 40px rgba(91,26,39,.1)
+}
+body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--paper);color:var(--ink)}
+button,input,select{font:inherit}button{cursor:pointer}.app-shell{min-height:100vh}
+.topbar{height:82px;padding:0 26px;display:flex;align-items:center;justify-content:space-between;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.brand-wrap{display:flex;align-items:center;gap:12px}.brand-mark{width:44px;height:44px;border-radius:15px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),#a94250);color:#fff;font-weight:900;font-size:22px;box-shadow:0 8px 20px rgba(133,35,50,.25)}
+.brand-wrap h1{font-size:18px;margin:0}.brand-wrap p{margin:3px 0 0;color:var(--muted);font-size:12px}.top-actions{display:flex;align-items:center;gap:9px}.date-chip{padding:9px 12px;border-radius:12px;background:#f7f7f5;color:var(--muted);font-size:12px;border:1px solid var(--line)}
+.secondary,.primary{border:0;border-radius:12px;padding:10px 14px;font-weight:800}.secondary{background:#f5e9ec;color:var(--accent)}.secondary:hover{background:#eedde1}.primary{background:var(--navy);color:#fff}.icon-action{white-space:nowrap}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 390px;min-height:calc(100vh - 82px)}.products-panel{padding:24px 26px 40px}
+.hero{border-radius:28px;padding:28px 30px;background:linear-gradient(125deg,#852332,#571923);color:#fff;display:flex;justify-content:space-between;align-items:center;overflow:hidden;position:relative;box-shadow:var(--shadow)}
+.hero:after{content:"";position:absolute;right:-80px;top:-80px;width:260px;height:260px;border-radius:50%;background:rgba(255,255,255,.06)}.hero h2{font-size:34px;line-height:1.05;margin:7px 0 10px}.hero p{margin:0;color:#d9deea;max-width:590px}.eyebrow{font-size:11px;letter-spacing:.14em;font-weight:900;color:var(--accent)}.hero .eyebrow{color:#ffd0c2}.hero-art{display:flex;gap:14px;align-items:center;position:relative;z-index:2}.floating-card{width:96px;height:96px;border-radius:28px;display:grid;place-items:center;font-size:42px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.14);transform:rotate(8deg)}.floating-card.small{width:62px;height:62px;font-size:28px;transform:rotate(-9deg)}
+.toolbar{display:flex;justify-content:space-between;align-items:end;margin:26px 0 14px}.toolbar h3{font-size:22px;margin:0}.toolbar p{margin:5px 0 0;color:var(--muted);font-size:13px}.search-wrap{min-width:280px;display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);padding:0 13px;border-radius:14px}.search-wrap span{font-size:23px;color:var(--muted)}.search-wrap input{border:0;outline:0;padding:12px 4px;width:100%;background:transparent}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}.filter-btn{border:1px solid var(--line);background:#fff;color:var(--muted);padding:9px 13px;border-radius:999px;font-weight:800;font-size:12px}.filter-btn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}.product-card{background:#fff;border:1px solid var(--line);border-radius:22px;overflow:hidden;box-shadow:0 8px 28px rgba(38,35,30,.06);transition:.2s ease}.product-card:hover{transform:translateY(-4px);box-shadow:0 16px 36px rgba(38,35,30,.11)}
+.product-image-wrap{height:165px;background:#fbf6f7;position:relative;overflow:hidden}.product-image{width:100%;height:100%;object-fit:cover;display:block}.stock-badge{position:absolute;top:12px;right:12px;background:rgba(255,255,255,.94);backdrop-filter:blur(6px);padding:7px 9px;border-radius:10px;font-size:11px;font-weight:900;box-shadow:0 5px 18px rgba(0,0,0,.07)}.stock-badge.low{color:#b46800}.stock-badge.out{color:var(--red)}
+.product-info{padding:15px}.category-pill{font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}.product-info h3{font-size:16px;margin:6px 0 12px}.product-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px}.price{font-size:20px;font-weight:900}.add-btn{width:40px;height:40px;border-radius:13px;border:0;background:var(--accent);color:#fff;font-size:22px;font-weight:700;box-shadow:0 7px 16px rgba(133,35,50,.22)}.add-btn:disabled{opacity:.35;cursor:not-allowed}
+.cart-panel{background:#fff;border-left:1px solid var(--line);padding:22px;display:flex;flex-direction:column;position:sticky;top:82px;height:calc(100vh - 82px)}.cart-heading{display:flex;justify-content:space-between;align-items:flex-start}.cart-heading h2{margin:4px 0 0;font-size:24px}.clear-btn{border:0;background:#f9eaed;color:var(--accent);padding:8px 10px;border-radius:10px;font-weight:800}.cart-counter{margin:12px 0;background:#faf5f6;border:1px solid var(--line);padding:9px 12px;border-radius:11px;color:var(--muted);font-size:12px;font-weight:700}
+.cart-items{flex:1;overflow:auto;min-height:130px;padding-right:3px}.empty-state{text-align:center;padding:34px 14px;color:var(--muted);display:flex;flex-direction:column;gap:7px}.empty-state strong{color:var(--ink)}.empty-icon{font-size:42px}
+.cart-item{display:grid;grid-template-columns:58px 1fr;gap:11px;padding:11px 0;border-bottom:1px solid var(--line)}.cart-thumb{width:58px;height:58px;border-radius:13px;object-fit:cover;background:#f6f5f1}.cart-item-name{font-weight:800;font-size:13px}.cart-item-price{font-size:12px;color:var(--muted);margin-top:2px}.cart-item-top{display:flex;justify-content:space-between;gap:8px}.cart-controls{display:flex;align-items:center;gap:7px;margin-top:8px}.qty-btn{width:28px;height:28px;border-radius:8px;border:1px solid var(--line);background:#fff;font-weight:900}.remove-btn{margin-left:auto;border:0;background:transparent;color:#bf4e3a;font-size:11px;font-weight:800}
+.summary-box{background:#faf9f6;border:1px solid var(--line);border-radius:18px;padding:14px;margin-top:12px}.summary-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;color:var(--muted)}.summary-row strong{color:var(--ink)}.discount-row{display:flex;gap:5px}.discount-row input,.discount-row select{border:1px solid var(--line);background:#fff;border-radius:9px;padding:6px 7px}.discount-row input{width:76px}.discount-row select{width:52px}.grand-total{border-top:1px dashed #d7d2c9;margin-top:5px;padding-top:12px;font-size:19px;color:var(--ink)}
+.payment-box{display:grid;gap:8px;margin-top:14px}.payment-box>label{font-size:12px;font-weight:800;color:var(--muted)}.payment-methods{display:grid;grid-template-columns:1fr 1fr;gap:7px}.pay-method{border:1px solid var(--line);background:#fff;border-radius:11px;padding:9px 7px;font-weight:800;font-size:12px;color:var(--muted)}.pay-method.active{border-color:var(--accent);background:#f8e9ec;color:var(--accent)}.hidden-select{display:none}
+#cashBlock{display:grid;gap:7px}.money-input{display:flex;align-items:center;border:1px solid var(--line);border-radius:12px;padding:0 12px;background:#fff}.money-input span{font-weight:900;color:var(--muted)}.money-input input{border:0;outline:0;padding:10px 6px;width:100%}.change-card{display:flex;justify-content:space-between;background:#eef9f4;color:var(--green);padding:10px 12px;border-radius:11px;font-size:13px}.checkout-btn{border:0;border-radius:14px;padding:13px 15px;background:linear-gradient(135deg,var(--accent),#a94250);color:#fff;font-weight:900;font-size:14px;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 10px 24px rgba(133,35,50,.24)}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#581923;color:#fff;padding:11px 16px;border-radius:12px;z-index:40;box-shadow:var(--shadow);font-weight:800}.hidden{display:none!important}
+.modal{position:fixed;inset:0;background:rgba(66,19,29,.68);display:grid;place-items:center;padding:20px;z-index:20}.modal-card{width:min(690px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:24px;padding:22px;box-shadow:0 25px 80px rgba(74,17,29,.28)}.modal-card.large{width:min(1050px,100%)}.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.modal-header h2{margin:4px 0 0}.icon-btn{border:0;background:#f7edef;color:var(--accent);width:36px;height:36px;border-radius:50%}
+.product-form{display:grid;grid-template-columns:1.6fr 1fr 1.6fr .8fr .8fr auto;gap:10px;align-items:end;background:#faf9f6;padding:14px;border-radius:16px;margin-bottom:18px}.product-form label{display:block;font-size:11px;font-weight:800;color:var(--muted);margin:0 0 5px}.product-form input{width:100%;min-width:0;border:1px solid var(--line);border-radius:10px;padding:9px}.product-barcode-field>div{display:flex;gap:5px}.product-barcode-field .secondary{padding:7px;font-size:10px;white-space:nowrap}.product-form-message{grid-column:1/-1;margin:0;color:#a33;font-size:10px}.form-actions{display:flex;gap:6px}
+.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse}th,td{padding:12px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}.small-btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 8px}.danger-text{color:var(--red)}
+.sales-summary{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}.summary-card{background:#faf9f6;border:1px solid var(--line);border-radius:16px;padding:16px}.summary-card span,.summary-card small{display:block;color:var(--muted)}.summary-card strong{display:block;font-size:25px;margin:5px 0}.receipt-card{width:min(420px,100%)}.receipt{font-family:"Courier New",monospace}.receipt h2,.receipt p{text-align:center}.receipt hr{border:0;border-top:1px dashed #222}.receipt-row{display:flex;justify-content:space-between;gap:10px;margin:6px 0}.receipt-item{margin:9px 0}.receipt-item small{display:flex;justify-content:space-between}
+@media(max-width:980px){.layout{grid-template-columns:1fr}.cart-panel{position:static;height:auto;border-left:0;border-top:1px solid var(--line)}.topbar{position:static}.product-form{grid-template-columns:1fr 1fr}.date-chip{display:none}}
+@media(max-width:620px){.topbar{height:auto;padding:15px;align-items:flex-start;gap:12px;flex-direction:column}.top-actions{width:100%;overflow:auto}.products-panel{padding:16px}.hero{padding:22px}.hero h2{font-size:28px}.hero-art{display:none}.toolbar{align-items:stretch;flex-direction:column;gap:12px}.search-wrap{min-width:0}.product-grid{grid-template-columns:1fr 1fr;gap:10px}.product-image-wrap{height:130px}.product-info{padding:12px}.cart-panel{padding:16px}.product-form{grid-template-columns:1fr}.sales-summary{grid-template-columns:1fr}}
+@media print{body *{visibility:hidden}#receiptContent,#receiptContent *{visibility:visible}#receiptContent{position:absolute;left:0;top:0;width:100%;padding:20px}.no-print{display:none!important}}
 
-  <div class="app-shell hidden" id="appShell">
-    <header class="topbar">
-      <div class="brand-wrap">
-        <div class="brand-mark">S</div>
-        <div>
-          <h1 id="appBrandTitle">PUP Souvenir Shop</h1>
-          <p id="appBrandSubtitle">Local finds • Happy memories</p>
-        </div>
-      </div>
-      <div class="top-actions">
-        <div class="date-chip" id="clock">Loading...</div>
-        <span class="role-badge" id="roleBadge"></span>
-        <button id="inventoryBtn" class="secondary icon-action">📦 Inventory</button>
-        <button id="salesBtn" class="secondary icon-action">📈 Sales</button>
-        <button id="documentsBtn" class="secondary icon-action">▱ Documents</button>
-        <button id="logoutBtn" class="secondary icon-action">Log out</button>
-      </div>
-    </header>
+.login-screen{min-height:100vh;display:grid;place-items:center;padding:32px;background:radial-gradient(ellipse at 10% 10%,rgba(255,235,219,.95),transparent 40%),radial-gradient(ellipse at 90% 90%,rgba(224,233,250,.8),transparent 38%),#f4f3ef}
+.login-card{width:min(1080px,100%);min-height:600px;display:grid;grid-template-columns:.86fr 1.14fr;overflow:hidden;background:#fff;border:1px solid rgba(255,255,255,.8);border-radius:30px;box-shadow:0 28px 80px rgba(31,42,68,.16)}
+.login-brand-panel{position:relative;isolation:isolate;display:flex;flex-direction:column;align-items:flex-start;overflow:hidden;padding:42px;background:linear-gradient(150deg,#263653 0%,#1b2740 78%);color:#fff}.login-brand-panel:before,.login-brand-panel:after{content:"";position:absolute;z-index:-1;border-radius:50%;border:1px solid rgba(255,255,255,.1)}.login-brand-panel:before{width:360px;height:360px;right:-190px;top:-105px;box-shadow:0 0 0 32px rgba(255,255,255,.025),0 0 0 68px rgba(255,255,255,.02)}.login-brand-panel:after{width:260px;height:260px;left:-140px;bottom:-165px;background:rgba(232,100,58,.12)}
+.login-brand-panel>.brand-mark{width:48px;height:48px;margin-bottom:42px;border-radius:16px;background:linear-gradient(135deg,#ff784d,#e85635);font-size:23px}.login-brand-panel>.eyebrow{color:#ffc7b5}.login-brand-panel h1{font-size:clamp(34px,4vw,48px);line-height:1.04;letter-spacing:-.04em;margin:15px 0}.login-intro{max-width:330px;color:#cbd3e2;font-size:14px;line-height:1.75;margin:0}
+.login-art{position:relative;display:grid;place-items:center;width:100%;height:185px;margin:26px 0 18px}.login-art:before{content:"";position:absolute;width:168px;height:168px;border-radius:48px;background:linear-gradient(145deg,rgba(255,255,255,.15),rgba(255,255,255,.04));border:1px solid rgba(255,255,255,.16);transform:rotate(-9deg)}.login-art-bag{position:relative;z-index:1;font-size:76px;filter:drop-shadow(0 14px 14px rgba(0,0,0,.2))}.login-art-spark{position:absolute;z-index:2;top:15px;right:26%;font-size:32px;color:#ffc56b}.login-art-tag{position:absolute;z-index:2;right:12%;bottom:18px;padding:9px 12px;border:1px solid rgba(255,255,255,.25);border-radius:10px;background:#f4b942;color:#28334a;font-size:9px;font-weight:1000;line-height:1.4;letter-spacing:.1em;transform:rotate(7deg)}.login-brand-footer{display:flex;align-items:center;gap:8px;margin-top:auto;color:#bac4d7;font-size:9px;font-weight:800;letter-spacing:.16em}.login-brand-footer span{width:18px;height:2px;background:#f4b942}.login-brand-footer b{color:#f4b942}
+.login-access-panel{display:flex;flex-direction:column;justify-content:center;padding:42px}.login-access-heading .eyebrow{font-size:10px}.login-access-heading h2{margin:8px 0 4px;font-size:29px;letter-spacing:-.03em}.login-access-heading p{margin:0;color:var(--muted);font-size:13px}
+.login-roles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:25px 0 17px}.login-role{min-width:0;display:grid;align-content:start;gap:9px;padding:17px 15px;border:1px solid var(--line);border-radius:17px;background:#fff;box-shadow:0 7px 20px rgba(38,35,30,.045);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}.login-role:hover{transform:translateY(-3px);border-color:#d8dce5;box-shadow:0 12px 26px rgba(38,35,30,.09)}.login-role.shop-owner-login{border-top:3px solid var(--accent)}.login-role.rgo-login{border-top:3px solid #5b78ae}.login-role-heading{display:flex;align-items:center;gap:10px;min-height:42px;margin-bottom:5px}.login-role-icon{flex:0 0 38px;width:38px;height:38px;display:grid;place-items:center;border-radius:12px;background:#fff1e9;font-size:19px}.rgo-login .login-role-icon{background:#edf2fb}.login-role strong,.login-role small{display:block}.login-role strong{font-size:13px}.login-role small{margin-top:3px;color:var(--muted);font-size:10px;line-height:1.35}.login-role label{margin-top:1px;color:#465167;font-size:10px;font-weight:800}.login-role input{width:100%;min-width:0;height:39px;padding:0 10px;border:1px solid var(--line);border-radius:9px;background:#fbfbfa;color:var(--ink);font-size:11px;outline:none;transition:border-color .15s,box-shadow .15s}.login-role input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,100,58,.12);background:#fff}.login-submit{width:100%;display:flex;justify-content:space-between;align-items:center;border:0;border-radius:10px;padding:11px 12px;background:var(--navy);color:#fff;font-size:11px;font-weight:900;margin-top:3px;transition:background .15s,transform .15s}.login-submit:hover{background:#344568;transform:translateY(-1px)}.rgo-login .login-submit{background:#425e91}.rgo-login .login-submit:hover{background:#304b7a}.credential-note{color:var(--muted);font-size:9px}.login-error{margin:0;color:var(--red);font-size:11px;font-weight:700}.prototype-note{display:flex;gap:7px;align-items:flex-start;margin:0;color:var(--muted);font-size:10px;line-height:1.55}.prototype-note span{color:#52709f;font-size:13px}
+.auth-mode-switch{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:5px;margin:22px 0 16px;border:1px solid var(--line);border-radius:14px;background:#f7f6f2}.auth-mode{border:0;border-radius:10px;padding:10px;background:transparent;color:var(--muted);font-weight:800}.auth-mode.active{background:#fff;color:var(--ink);box-shadow:0 2px 8px rgba(38,35,30,.09)}
+.role-selection{display:grid;gap:10px}.role-choice{display:grid;grid-template-columns:38px 1fr 18px;gap:12px;align-items:center;text-align:left;border:1px solid var(--line);background:#fff;border-radius:16px;padding:15px;color:var(--ink)}.role-choice:hover,.role-choice:focus-visible{border-color:var(--accent);background:#fffaf7;outline:none}.login-role-icon{font-size:24px}.role-choice strong,.role-choice small{display:block}.role-choice small{font-size:11px;color:var(--muted);margin-top:4px}
+.credentials-form{display:grid;gap:9px}.back-link{justify-self:start;border:0;background:transparent;color:var(--muted);font-size:12px;font-weight:700;padding:0 0 7px}.back-link:hover{color:var(--accent)}.selected-role{font-weight:900;font-size:16px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:#faf9f6;margin-bottom:4px}.credentials-form label{font-size:12px;font-weight:800;color:var(--ink)}.credentials-form input{width:100%;border:1px solid var(--line);border-radius:11px;padding:11px 12px;color:var(--ink);background:#fff}.credentials-form input:focus{outline:2px solid rgba(232,100,58,.28);border-color:var(--accent)}.login-submit{display:flex;justify-content:space-between;align-items:center;border:0;border-radius:12px;padding:12px 14px;background:var(--navy);color:#fff;font-weight:800;margin-top:3px}.login-submit:hover{background:#2c3b5c}.credential-note{color:var(--muted);font-size:11px}.login-error{margin:0;color:var(--red);font-size:12px;font-weight:700}.prototype-note{font-size:11px;line-height:1.5;color:var(--muted)}
+.role-badge{border-radius:999px;background:#f8e9ec;color:var(--navy);font-size:11px;font-weight:800;padding:8px 10px;white-space:nowrap}
+.rgo-dashboard{padding:30px;min-height:calc(100vh - 82px)}.rgo-welcome{max-width:900px;margin:0 auto;padding:32px;border-radius:26px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow)}.rgo-welcome h2{font-size:30px;margin:8px 0}.rgo-welcome p{color:var(--muted);line-height:1.6}.rgo-actions{display:flex;gap:10px;margin-top:22px}.rgo-actions button{padding:12px 16px}
+.shop-selector{display:grid;gap:7px;max-width:420px;margin-top:20px}.shop-selector label,.add-shop-form label{font-size:12px;font-weight:800;color:var(--muted)}.shop-selector select,.add-shop-form input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:11px;background:#fff;color:var(--ink)}.shop-selector select:focus,.add-shop-form input:focus{outline:2px solid rgba(232,100,58,.28);border-color:var(--accent)}.add-shop-form{display:grid;gap:10px}.add-shop-form .form-actions{display:flex;gap:8px;margin-top:6px}
+.sales-period{display:flex;align-items:center;gap:10px;margin-bottom:14px}.sales-period label{font-size:12px;font-weight:800;color:var(--muted)}.sales-period select,.sales-period input{padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.notification-list{display:grid;gap:10px}.notification-item{padding:14px;border:1px solid var(--line);border-radius:14px;background:#faf9f6}.notification-item strong{display:block;font-size:13px}.notification-item p{margin:5px 0 0;color:var(--muted);font-size:12px;line-height:1.5}.notification-empty{text-align:center;padding:24px;color:var(--muted)}
+.report-date-control{display:grid;gap:7px;max-width:260px;margin-top:15px}.report-date-control label{font-size:12px;font-weight:800;color:var(--muted)}.report-date-control input{padding:10px 12px;border:1px solid var(--line);border-radius:11px;background:#fff;color:var(--ink)}
+.rgo-report-overview{display:grid;gap:20px;margin-top:28px}.rgo-report-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.rgo-metric{display:grid;gap:7px;padding:17px;border:1px solid var(--line);border-radius:16px;background:#faf9f6}.rgo-metric span,.rgo-metric small{color:var(--muted);font-size:12px}.rgo-metric strong{font-size:22px;overflow-wrap:anywhere}.rgo-report-section{display:grid;gap:10px}.rgo-report-section h3{margin:0;font-size:18px}.rgo-report-section .table-wrap{margin:0}.rgo-report-section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}.rgo-report-download{padding:8px 11px;font-size:12px}.report-help{margin:0;color:var(--muted);font-size:12px;line-height:1.5}
+@media(max-width:760px){.rgo-report-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:850px){.login-screen{padding:20px}.login-card{grid-template-columns:.78fr 1.22fr}.login-brand-panel{padding:30px}.login-access-panel{padding:30px}.login-roles{grid-template-columns:1fr}.login-role{grid-template-columns:1fr 1fr;column-gap:10px}.login-role-heading,.login-error,.login-submit,.credential-note{grid-column:1/-1}.login-role-heading{margin-bottom:1px}.login-role label{align-self:end}.login-role input{margin-top:-5px}}
+@media(max-width:620px){.login-screen{padding:14px;place-items:start center}.login-card{grid-template-columns:1fr;min-height:0;border-radius:23px}.login-brand-panel{min-height:240px;padding:25px 26px 20px}.login-brand-panel>.brand-mark{width:40px;height:40px;margin-bottom:18px;border-radius:13px}.login-brand-panel h1{font-size:32px;margin:9px 0}.login-intro{max-width:420px;font-size:12px;line-height:1.55}.login-art{position:absolute;right:5px;bottom:9px;width:150px;height:120px;margin:0;opacity:.72}.login-art:before{width:98px;height:98px;border-radius:31px}.login-art-bag{font-size:49px}.login-art-spark{top:0;right:17%;font-size:23px}.login-art-tag{right:1%;bottom:6px;padding:6px 8px;font-size:7px}.login-brand-footer{margin-top:17px;font-size:8px}.login-access-panel{padding:25px 22px 23px}.login-access-heading h2{font-size:25px}.login-roles{gap:10px;margin:18px 0 15px}.login-role{padding:14px}.rgo-dashboard{padding:16px}.rgo-welcome{padding:22px}.rgo-welcome h2{font-size:24px}.rgo-actions{flex-direction:column}.role-badge{font-size:10px}}
 
-    <main id="rgoDashboard" class="rgo-dashboard hidden">
-      <aside class="admin-sidebar">
-        <div class="sidebar-label">WORKSPACE</div>
-        <button class="admin-nav active" type="button" data-admin-view="home"><span>⌂</span> Overview</button>
-        <div class="sidebar-label shop-nav-label">SHOP MANAGEMENT</div>
-        <div id="adminShopList" class="admin-shop-list"></div>
-        <details class="archived-shops"><summary>Archived shops</summary><div id="archivedShopList"></div></details>
-        <button class="admin-nav add-shop-nav" type="button" id="sidebarAddShop"><span>＋</span> Add a shop</button>
-        <div class="sidebar-divider"></div>
-        <button class="admin-nav" type="button" data-admin-view="sales"><span>↗</span> Daily sales</button>
-        <button class="admin-nav" type="button" data-admin-view="inventory"><span>▤</span> Inventory</button>
-        <button class="admin-nav" type="button" data-admin-view="reports"><span>▧</span> Financial reports</button>
-        <button class="admin-nav" type="button" data-admin-view="documents"><span>▱</span> Documents</button>
-        <button class="admin-nav" type="button" data-admin-view="users"><span>♙</span> User management</button>
-        <button class="admin-nav" type="button" data-admin-view="settings"><span>⚙</span> System settings</button>
-        <div class="sidebar-footer"><span class="sidebar-avatar">R</span><span><strong>Resource Generation</strong><small>Office administrator</small></span></div>
-      </aside>
+.login-screen{min-height:100vh;min-height:100svh;display:grid;place-items:center;padding:24px;background:#781f2c}
+.login-card{position:relative;width:min(420px,100%);min-height:0;display:block;overflow:hidden;padding:38px 28px 30px;border:0;border-radius:0;background:#fff;box-shadow:0 24px 70px rgba(37,8,13,.25)}
+.login-card:before{content:"";position:absolute;inset:0 0 auto;height:12px;background:#781f2c}
+.login-heading{text-align:center;margin:0 0 22px}.login-heading h1{margin:0;color:#852332;font-size:28px;font-weight:800;letter-spacing:-.03em}.login-heading p{margin:8px 0 0;color:#737b8a;font-size:14px}
+.login-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:4px;margin-bottom:26px;border-radius:999px;background:#f2f3f6}.login-tab{min-width:0;border:0;border-radius:999px;padding:10px 5px;background:transparent;color:#667085;font-size:12px;font-weight:700;white-space:nowrap;transition:background .16s,color .16s,box-shadow .16s}.login-tab:hover{color:#852332}.login-tab.active{background:#852332;color:#fff;box-shadow:0 3px 8px rgba(133,35,50,.2)}
+.login-form{display:grid;gap:8px}.login-role-hint{margin:-8px 0 3px;color:#8a2636;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}.login-form label{margin-top:2px;color:#273142;font-size:13px;font-weight:650}.login-form input{width:100%;height:48px;padding:0 13px;border:1px solid #d8dde7;border-radius:11px;background:#fff;color:#172033;font-size:14px;outline:none;transition:border-color .15s,box-shadow .15s}.login-form input::placeholder{color:#a0a6b2}.login-form input:focus{border-color:#9b3443;box-shadow:0 0 0 3px rgba(133,35,50,.1)}.login-confirm-field{display:grid;gap:8px}.login-form .login-error{padding:9px 10px;border-radius:9px;background:#fff0ee;color:#b33a35;font-size:12px;line-height:1.45}.login-form .login-submit{height:46px;justify-content:center;gap:10px;margin-top:8px;border-radius:11px;background:#852332;font-size:14px}.login-form .login-submit:hover{background:#6e1c29;transform:translateY(-1px)}.login-form .credential-note{margin-top:1px;text-align:center;color:#818897;font-size:11px}.login-card>.prototype-note{display:block;margin:20px 0 0;text-align:center;color:#858b97;font-size:10px;line-height:1.5}
+@media(max-width:480px){.login-screen{padding:0;place-items:stretch;background:#781f2c}.login-card{width:100%;min-height:100vh;min-height:100svh;padding:46px 24px 28px;box-shadow:none}.login-tabs{margin-bottom:28px}.login-tab{font-size:11px}.login-heading h1{font-size:27px}}
 
-      <div class="admin-main">
-        <div class="admin-page-heading">
-          <div><span class="eyebrow">RESOURCE GENERATION OFFICE</span><h2 id="adminPageTitle">Overview</h2><p id="adminPageDescription">A clear view of sales and inventory across your campus shops.</p></div>
-          <div class="admin-heading-actions">
-            <label class="shop-selector admin-shop-filter"><span class="visually-hidden">Filter by shop</span><select id="shopSelect" aria-label="Filter dashboard by shop"></select></label>
-            <span class="admin-user-avatar" aria-label="RGO administrator">RA</span>
-          </div>
-        </div>
+:root{--accent:#800000;--navy:#800000;--accent2:#d4af37;--paper:#f5f6f8;--line:#e7e8ec;--ink:#25242b;--muted:#777984;--shadow:0 12px 32px rgba(27,30,39,.06)}
+body{background:#f5f6f8;color:#292830}
+.topbar{height:76px;padding:0 30px;background:#fff;border-bottom-color:#e9e9ed}
+.brand-mark{border-radius:13px;background:#800000;box-shadow:none}
+.brand-wrap h1{font-size:17px;letter-spacing:-.02em}
+.brand-wrap p{font-size:11px}
+.top-actions{gap:8px}.date-chip{background:#faf9f5;border-color:#efede4}.role-badge{padding:8px 11px;border-radius:20px;background:#f7eeee;color:#800000;font-size:11px;font-weight:800}
+.icon-action{font-size:12px;padding:9px 11px;border-radius:10px}
+.login-screen{background:radial-gradient(ellipse at 12% 9%,rgba(212,175,55,.15),transparent 30%),radial-gradient(ellipse at 87% 90%,rgba(128,0,0,.1),transparent 34%),#f5f6f8}
+.login-card{width:min(450px,100%);padding:30px 34px 26px;border:1px solid #e8e5e2;border-radius:22px;box-shadow:0 24px 80px rgba(57,27,27,.12)}
+.login-card:before{height:5px;background:linear-gradient(90deg,#800000 0 75%,#d4af37 75%)}
+.auth-brand{display:flex;align-items:center;gap:11px;margin:0 0 30px}
+.auth-brand-mark{width:43px;height:43px;display:grid;place-items:center;border-radius:13px;background:#800000;color:#fff;font-size:14px;font-weight:900;letter-spacing:-.05em;box-shadow:0 5px 13px rgba(128,0,0,.17)}
+.auth-brand strong,.auth-brand span{display:block}.auth-brand strong{font-size:16px;letter-spacing:-.03em}.auth-brand span{margin-top:3px;color:#777984;font-size:10px}
+.login-heading{text-align:left;margin-bottom:18px}.login-heading h1{font-size:25px;color:#292830}.login-heading p{font-size:12px}
+.login-tabs{grid-template-columns:repeat(2,minmax(0,1fr));gap:3px;margin-bottom:22px;background:#f5f3f2}
+.login-tab{padding:9px 4px;font-size:11px}.login-tab.active{background:#800000}
+.login-role-hint{margin-bottom:8px;color:#800000}.login-form{gap:9px}.login-form label{font-size:12px}.login-form input{height:44px;border-radius:9px;font-size:13px}
+.login-form input:focus{border-color:#800000;box-shadow:0 0 0 3px rgba(128,0,0,.09)}
+.login-form .login-submit{height:45px;margin-top:3px;border-radius:10px;background:#800000}.login-form .login-submit:hover{background:#690000}
+.auth-mode-toggle{justify-self:center;padding:3px 8px;border:0;background:transparent;color:#800000;font-size:11px;font-weight:750}.auth-mode-toggle:hover{text-decoration:underline}
+.forgot-password{justify-self:end;margin-top:-3px;padding:0;border:0;background:transparent;color:#800000;font-size:11px;font-weight:750}
+.login-card>.prototype-note{margin-top:17px;font-size:9px}
+.rgo-dashboard:not(.hidden){display:grid;grid-template-columns:238px minmax(0,1fr);align-items:start;min-height:calc(100vh - 76px);background:#f5f6f8}
+.admin-sidebar{position:sticky;top:76px;display:flex;flex-direction:column;min-height:calc(100vh - 76px);height:calc(100vh - 76px);padding:26px 15px 15px;background:#fff;border-right:1px solid #e9e9ed}
+.sidebar-label{padding:0 12px;margin:5px 0 10px;color:#9999a1;font-size:9px;font-weight:900;letter-spacing:.13em}
+.admin-nav{width:100%;display:flex;align-items:center;gap:11px;padding:10px 12px;border:0;border-radius:9px;background:transparent;color:#666873;text-align:left;font-size:12px;font-weight:650;transition:background .16s,color .16s}
+.admin-nav>span{width:17px;color:#85858e;font-size:17px;text-align:center}.admin-nav:hover,.admin-nav.active{background:#f8eeee;color:#800000}.admin-nav.active{font-weight:800}.admin-nav.active>span{color:#800000}
+.shop-nav-label{margin-top:25px}.admin-shop-list{display:grid;gap:2px}.admin-shop-link{display:flex;align-items:center;gap:9px;padding:9px 12px;border:0;border-radius:8px;background:transparent;color:#5e6069;text-align:left;font-size:11px}.admin-shop-link:hover,.admin-shop-link.selected{background:#f8f6f2;color:#800000;font-weight:750}
+.shop-link-dot{width:7px;height:7px;flex:none;border-radius:50%;background:#d4af37}
+.add-shop-nav{color:#800000}.add-shop-nav>span{color:#800000}.sidebar-divider{height:1px;margin:12px 8px;background:#eeedf0}
+.archived-shops{margin:8px 12px;color:#777984;font-size:10px}.archived-shops summary{cursor:pointer}.archived-shop-link{width:100%;display:flex;justify-content:space-between;gap:6px;padding:8px 0;border:0;background:transparent;color:#696a72;text-align:left;font-size:10px}.archived-shop-link span{color:#800000;font-weight:750}.sidebar-empty{margin:4px 12px;color:#a0a1a8;font-size:10px}
+.sidebar-footer{display:flex;align-items:center;gap:9px;margin-top:auto;padding:12px 8px 5px;border-top:1px solid #eeedf0}.sidebar-avatar{width:31px;height:31px;display:grid;place-items:center;border-radius:50%;background:#f4e8e8;color:#800000;font-weight:900;font-size:11px}.sidebar-footer strong,.sidebar-footer small{display:block}.sidebar-footer strong{font-size:10px}.sidebar-footer small{margin-top:3px;color:#888992;font-size:9px}
+.admin-main{min-width:0;width:100%;max-width:1600px;margin:0 auto;padding:27px 32px 54px}
+.admin-page-heading{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:21px}
+.admin-page-heading .eyebrow{font-size:9px;letter-spacing:.14em}.admin-page-heading h2{margin:6px 0 4px;font-size:24px;letter-spacing:-.04em}.admin-page-heading p{margin:0;color:#7a7b83;font-size:11px}
+.admin-heading-actions{display:flex;align-items:center;gap:11px}.admin-shop-filter select,.report-date-control input,.report-controls input{height:36px;padding:0 11px;border:1px solid #e6e5e8;border-radius:9px;background:#fff;color:#555660;font-size:11px;outline:none}
+.admin-icon-button{position:relative;width:36px;height:36px;border:1px solid #e8e7eb;border-radius:10px;background:#fff;color:#696a72;font-size:17px}
+.notification-dot{position:absolute;top:7px;right:7px;width:7px;height:7px;border:1px solid white;border-radius:50%;background:#c44747}
+.admin-user-avatar{width:34px;height:34px;display:grid;place-items:center;border-radius:50%;background:#f1e4dc;color:#70412c;font-size:10px;font-weight:900}
+.admin-view{display:none}.admin-view.active{display:grid;gap:17px}
+.admin-welcome-banner{display:flex;align-items:center;justify-content:space-between;min-height:127px;padding:23px 27px;border:1px solid #741313;border-radius:14px;background:linear-gradient(110deg,#800000,#650000);color:white;box-shadow:0 8px 22px rgba(91,0,0,.11)}
+.welcome-kicker{color:#e8c778;font-size:8px;font-weight:900;letter-spacing:.15em}.admin-welcome-banner h3{margin:9px 0 5px;font-size:22px;letter-spacing:-.035em}.admin-welcome-banner p{margin:0;color:rgba(255,255,255,.77);font-size:11px}
+.banner-date{display:grid;gap:7px;padding:12px 15px;border:1px solid rgba(255,255,255,.2);border-radius:10px;background:rgba(255,255,255,.08)}.banner-date span{color:#e8c778;font-size:8px;font-weight:800;letter-spacing:.1em}.banner-date strong{font-size:11px}
+.admin-stat-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.admin-stat{min-width:0;padding:15px 15px 13px;border:1px solid #e9e9ed;border-radius:12px;background:#fff;box-shadow:0 3px 12px rgba(26,27,34,.025)}
+.stat-top{display:flex;align-items:center;justify-content:space-between;gap:6px;color:#74757e;font-size:10px;font-weight:650}.stat-icon{width:27px;height:27px;display:grid;place-items:center;border-radius:8px;font-size:13px;font-weight:900}.stat-icon.burgundy{background:#f8eaea;color:#800000}.stat-icon.gold{background:#fbf5e3;color:#a17b10}.stat-icon.green{background:#e8f4ee;color:#358465}.stat-icon.amber{background:#fff3e1;color:#bd790c}.stat-icon.slate{background:#edf0f5;color:#59667b}
+.admin-stat>strong{display:block;overflow:hidden;margin:12px 0 6px;color:#24242b;font-size:25px;letter-spacing:-.04em;text-overflow:ellipsis;white-space:nowrap}.admin-stat:nth-child(3)>strong{font-size:21px}.admin-stat small{display:block;color:#9a9ba2;font-size:9px}
+.admin-content-grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(270px,.9fr);gap:15px}
+.admin-card{min-width:0;padding:18px;border:1px solid #e8e8ec;border-radius:13px;background:#fff;box-shadow:0 3px 12px rgba(26,27,34,.025)}
+.admin-card-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:15px}.admin-card-heading h3{margin:0;color:#292830;font-size:13px;letter-spacing:-.015em}.admin-card-heading p{margin:4px 0 0;color:#96969e;font-size:9px}
+.chart-period,.quarterly-badge{padding:6px 9px;border-radius:7px;background:#f8f3e7;color:#9b7915;font-size:8px;font-weight:800}
+.chart-summary{display:flex;align-items:baseline;gap:8px;margin:3px 0 0}.chart-summary strong{font-size:21px;letter-spacing:-.04em}.chart-summary span{color:#92939a;font-size:9px}
+.chart-container{position:relative;height:146px;margin-top:6px}.chart-container svg{width:100%;height:100%;overflow:visible}.chart-gridline{fill:none;stroke:#efeff1;stroke-width:1;stroke-dasharray:3 5}.chart-area{fill:url(#salesFill)}.chart-line{fill:none;stroke:#800000;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}.chart-point{fill:#fff;stroke:#800000;stroke-width:2}.chart-label{fill:#9a9ba2;font-size:9px;font-family:inherit}.chart-empty-hint{position:absolute;left:50%;top:48%;padding:5px 8px;border-radius:6px;background:rgba(255,255,255,.86);color:#909199;font-size:8px;white-space:nowrap;transform:translate(-50%,-50%)}
+.card-more{color:#96969e;letter-spacing:2px}.reminder-list{display:grid;gap:0;min-height:144px}.reminder-item{display:grid;grid-template-columns:27px minmax(0,1fr) auto;align-items:start;gap:9px;padding:11px 0;border-bottom:1px solid #f0eff1}.reminder-icon{width:25px;height:25px;display:grid;place-items:center;border-radius:8px;font-size:11px;font-weight:900}.reminder-icon.alert{background:#fff1df;color:#bd790c}.reminder-icon.paid{background:#e8f4ee;color:#398268}.reminder-item strong{display:block;font-size:9px}.reminder-item p{margin:4px 0 0;color:#96969e;font-size:8px;line-height:1.45}.reminder-item time{color:#a1a1a8;font-size:8px}.reminder-empty{display:grid;min-height:125px;place-items:center;color:#9899a1;font-size:9px;text-align:center}
+.text-action{padding:0;border:0;background:transparent;color:#800000;font-size:9px;font-weight:800}.text-action span{margin-left:5px}.notifications-card>.text-action{margin-top:12px}
+.shops-card,.activity-card{padding:18px 19px}.outline-button{padding:8px 10px;border:1px solid #e8dddd;border-radius:8px;background:#fff;color:#800000;font-size:9px;font-weight:800}.admin-shop-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
+.managed-shop-card{padding:13px;border:1px solid #ecebef;border-radius:11px;background:#fff}.managed-shop-top{display:flex;align-items:center;justify-content:space-between}.shop-monogram{width:31px;height:31px;display:grid;place-items:center;border-radius:9px;background:#f6eeee;color:#800000;font-size:12px;font-weight:900}.shop-menu-button{width:26px;height:25px;border:0;border-radius:7px;background:transparent;color:#8f9097;letter-spacing:1px}.shop-menu-button:hover{background:#f6f3f3;color:#800000}
+.managed-shop-card h4{overflow:hidden;margin:11px 0 4px;font-size:11px;text-overflow:ellipsis;white-space:nowrap}.managed-shop-card>p{margin:0;color:#95959d;font-size:8px}.managed-shop-meta{display:flex;justify-content:space-between;gap:5px;margin:13px 0 11px;color:#777982;font-size:8px}.alert-text{color:#b27913}.healthy-text{color:#42826a}
+.shop-open-button{width:100%;display:flex;justify-content:space-between;align-items:center;padding:8px 9px;border:0;border-radius:7px;background:#f8eeee;color:#800000;font-size:8px;font-weight:800}.shop-archive-button{margin-top:8px;padding:0;border:0;background:transparent;color:#9999a0;font-size:8px}.shop-archive-button:hover{color:#a33}
+.admin-empty{grid-column:1/-1;padding:20px;border:1px dashed #dedee3;border-radius:9px;color:#95959d;font-size:10px;text-align:center}.compact-empty{padding:14px}
+.activity-list{display:grid}.activity-row{display:grid;grid-template-columns:27px minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0eff1}.activity-row:last-child{border-bottom:0}.activity-icon{width:26px;height:26px;display:grid;place-items:center;border-radius:8px;background:#f8eeee;color:#800000;font-size:13px}.activity-row strong{display:block;font-size:9px}.activity-row p{margin:3px 0 0;color:#9899a0;font-size:8px}.activity-amount{color:#45454d;font-size:9px;font-weight:800}.activity-row time{min-width:42px;color:#9b9ba2;font-size:8px;text-align:right}
+.report-filter-card .admin-card-heading{align-items:flex-start}.report-date-control{display:flex;align-items:center;gap:8px;color:#787982;font-size:9px}.report-date-control input{font-size:10px}.admin-report-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.admin-report-metrics article{padding:12px;border:1px solid #eeedf0;border-radius:9px;background:#fbfbfc}.admin-report-metrics span,.admin-report-metrics small{display:block;color:#898a92;font-size:9px}.admin-report-metrics strong{display:block;margin:7px 0 4px;font-size:17px;letter-spacing:-.03em}.admin-report-metrics small{font-size:8px}
+.admin-table-card{padding:17px 18px}.admin-table-card .table-wrap{border:1px solid #eeedf0;border-radius:9px}table{font-size:10px}th,td{padding:11px 12px}th{background:#fafafb;font-size:8px;letter-spacing:.07em;color:#81828a}td{color:#55565f;font-size:9px}
+.report-controls{display:flex;align-items:flex-end;gap:12px}.report-controls .report-date-control{display:grid;gap:5px}.report-controls input{width:130px}.royalty-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:4px}.royalty-summary>div{padding:12px;border:1px solid #eeedf0;border-radius:9px;background:#fbfbfc}.royalty-summary span{display:block;color:#868790;font-size:8px}.royalty-summary strong{display:block;margin-top:7px;font-size:15px}.royalty-summary>small{grid-column:1/-1;color:#9999a1;font-size:8px}
+.report-actions{display:flex;justify-content:flex-end;gap:8px}.report-actions .primary,.report-actions .secondary{padding:9px 12px;border-radius:8px;font-size:9px}.primary{background:#800000}.secondary{background:#f7eeee;color:#800000}
+.quarterly-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.quarterly-stats>div{padding:12px;border-radius:9px;background:#fafafb}.quarterly-stats span{display:block;color:#898a92;font-size:9px}.quarterly-stats strong{display:block;margin-top:8px;font-size:15px}
+.document-upload-card{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:19px}.document-upload-card h3{margin:9px 0 4px;font-size:13px}.document-upload-card p{margin:0;color:#92939a;font-size:9px}.document-upload-actions,.staff-document-upload{display:flex;align-items:center;gap:9px}.document-upload-actions select,.staff-document-upload select,.document-filter-label+select{height:34px;padding:0 9px;border:1px solid #e5e4e9;border-radius:8px;background:white;color:#6b6c74;font-size:9px}
+.upload-button{display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:0 12px;border-radius:8px;background:#800000;color:#fff;font-size:9px;font-weight:800;cursor:pointer}.upload-button:hover{background:#690000}
+.document-filter-label{margin-left:auto;color:#777982;font-size:9px}.document-name-cell{font-weight:750}.file-type-mark{display:inline-grid;width:24px;height:27px;place-items:center;margin-right:8px;border-radius:5px;background:#f8eeee;color:#800000;font-size:7px;font-weight:900}.document-actions{display:flex;gap:5px}.document-actions .small-btn{padding:5px 7px;font-size:8px}.table-empty-cell{text-align:center;color:#9999a1}.staff-document-upload{margin-bottom:11px}.staff-document-upload>label:first-child{color:#777982;font-size:10px}.visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.user-form{display:grid;grid-template-columns:1.2fr 1.2fr .8fr auto;align-items:end;gap:12px}.user-form>div,.settings-form>div{display:grid;gap:6px}.user-form label,.settings-form label{color:#777982;font-size:9px;font-weight:750}.user-form input,.user-form select,.settings-form input{height:36px;padding:0 10px;border:1px solid #e6e5e8;border-radius:8px;background:#fff;color:#555660;font-size:10px}.user-form .primary,.settings-form .primary{padding:10px 12px;border-radius:8px;font-size:9px;white-space:nowrap}.user-form-message{grid-column:1/-1;min-height:12px;margin:0;color:#398268;font-size:9px}
+.user-role-chip{display:inline-block;padding:5px 8px;border-radius:20px;font-size:8px;font-weight:800}.user-role-chip.admin{background:#f8eaea;color:#800000}.user-role-chip.staff{background:#edf0f5;color:#59667b}
+.settings-form{display:flex;align-items:flex-end;gap:14px}.setting-number{display:flex;align-items:center;gap:8px}.settings-form input{width:120px}.setting-number span{color:#9999a1;font-size:9px}.system-info-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.system-info-grid>div{padding:13px;border:1px solid #eeedf0;border-radius:9px;background:#fbfbfc}.system-info-grid span,.system-info-grid strong{display:block}.system-info-grid span{color:#898a92;font-size:8px}.system-info-grid strong{margin-top:7px;font-size:10px}
+.inventory-status{display:inline-block;padding:4px 7px;border-radius:20px;font-size:8px;font-weight:800}.inventory-status.in{background:#e8f4ee;color:#358465}.inventory-status.low{background:#fff3e1;color:#ad710c}.inventory-status.out{background:#f8eaea;color:#a33}
+@media(max-width:620px){.user-form{grid-template-columns:1fr}.settings-form{align-items:flex-start;flex-direction:column}.system-info-grid{grid-template-columns:1fr}}
+.admin-data-store{display:none!important}.report-help{color:#898a92;font-size:10px}
+@media(max-width:1200px){.admin-stat-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.admin-shop-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-main{padding:23px 22px 40px}}
+@media(max-width:900px){.rgo-dashboard:not(.hidden){grid-template-columns:70px minmax(0,1fr)}.admin-sidebar{padding:20px 10px}.sidebar-label,.shop-nav-label,.admin-shop-link span:not(.shop-link-dot),.add-shop-nav:not(.admin-nav),.sidebar-footer>span:not(.sidebar-avatar),.archived-shops,.admin-nav:not(.active):not([data-admin-view]){display:none}.admin-nav{justify-content:center;padding:11px 6px;font-size:0}.admin-nav>span{font-size:17px}.admin-shop-list{margin-bottom:10px}.admin-shop-link{justify-content:center;padding:10px}.admin-shop-link span:not(.shop-link-dot){display:none}.sidebar-divider{margin:12px 3px}.sidebar-footer{justify-content:center;padding:12px 0}.admin-sidebar .add-shop-nav{display:flex}.admin-sidebar .add-shop-nav::after{content:"＋";font-size:16px}.admin-content-grid{grid-template-columns:1fr}.admin-stat-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:620px){.topbar{height:auto;min-height:68px;padding:12px 14px;align-items:center;flex-direction:row}.brand-mark{width:38px;height:38px}.brand-wrap h1{font-size:14px}.brand-wrap p{font-size:9px}.top-actions{width:auto;overflow:visible;gap:5px}.top-actions .date-chip,.role-badge{display:none}.icon-action{padding:8px;font-size:0}.icon-action::first-letter{font-size:14px}.rgo-dashboard:not(.hidden){grid-template-columns:54px minmax(0,1fr);min-height:calc(100vh - 68px)}.admin-sidebar{top:68px;height:calc(100vh - 68px);min-height:calc(100vh - 68px);padding:16px 6px}.admin-main{padding:19px 12px 32px}.admin-page-heading{align-items:flex-start;flex-wrap:wrap;gap:10px}.admin-page-heading h2{font-size:20px}.admin-page-heading p{max-width:240px;font-size:9px;line-height:1.5}.admin-heading-actions{gap:6px}.admin-shop-filter select{width:126px;padding:0 8px;font-size:9px}.admin-shop-filter select option{font-size:11px}.admin-user-avatar{width:30px;height:30px}.admin-icon-button{width:31px;height:31px}.admin-welcome-banner{min-height:112px;padding:17px}.admin-welcome-banner h3{font-size:18px}.admin-welcome-banner p{max-width:230px;font-size:9px}.banner-date{padding:9px}.banner-date strong{font-size:9px}.admin-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.admin-stat{padding:11px}.admin-stat>strong{font-size:21px}.admin-stat:nth-child(3)>strong{font-size:18px}.admin-stat-grid .admin-stat:last-child{grid-column:1/-1}.admin-card{padding:13px}.admin-card-heading{align-items:flex-start}.admin-card-heading h3{font-size:12px}.admin-card-heading p{font-size:8px;line-height:1.45}.chart-container{height:120px}.admin-shop-cards{grid-template-columns:1fr}.managed-shop-card{padding:12px}.managed-shop-card h4{font-size:12px}.activity-row{grid-template-columns:25px minmax(0,1fr) auto;gap:7px}.activity-row time{display:none}.activity-amount{font-size:8px}.admin-report-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-report-metrics strong{font-size:15px}.report-filter-card .admin-card-heading{display:grid}.report-controls{flex-wrap:wrap}.report-date-control{font-size:8px}.report-controls input{width:120px}.royalty-summary,.quarterly-stats{grid-template-columns:1fr}.royalty-summary>small{grid-column:auto}.document-upload-card{align-items:flex-start;flex-direction:column}.document-upload-actions{flex-wrap:wrap}.document-filter-label{display:none}.document-actions{flex-direction:column}.admin-table-card .admin-card-heading{flex-wrap:wrap}.report-actions{flex-wrap:wrap}.login-card{padding:29px 23px 25px}.login-tabs{margin-bottom:20px}}
+@media print{body *{visibility:hidden!important}.admin-main,[data-admin-panel="reports"],[data-admin-panel="reports"] *{visibility:visible!important}.admin-main{position:absolute;inset:0;width:100%;padding:16px;background:#fff}.admin-sidebar,.topbar,.admin-page-heading,.admin-welcome-banner,.admin-stat-grid,.admin-content-grid,.shops-card,.activity-card,.report-actions{display:none!important}.admin-view[data-admin-panel="reports"]{display:grid!important}.admin-card{box-shadow:none;break-inside:avoid}}
 
-        <section class="admin-view active" data-admin-panel="home" aria-label="Admin dashboard overview">
-          <div class="admin-welcome-banner">
-            <div><span class="welcome-kicker">SIN TALAAN · CENTRAL MONITORING</span><h3>Good day, Administrator</h3><p>Here’s what’s happening across your shops today.</p></div>
-            <div class="banner-date"><span>REPORTING DATE</span><strong id="dashboardDate">Today</strong></div>
-          </div>
-          <div class="admin-stat-grid">
-            <article class="admin-stat"><div class="stat-top"><span>Registered shops</span><span class="stat-icon burgundy">⌂</span></div><strong id="dashShopCount">0</strong><small><span class="stat-note">Across PUP campuses</span></small></article>
-            <article class="admin-stat"><div class="stat-top"><span>Total products</span><span class="stat-icon gold">▦</span></div><strong id="dashProductCount">0</strong><small><span class="stat-note">Registered in inventory</span></small></article>
-            <article class="admin-stat"><div class="stat-top"><span>Sales today</span><span class="stat-icon green">₱</span></div><strong id="dashSalesToday">₱0</strong><small><span class="stat-note" id="dashTransactionsToday">0 transactions</span></small></article>
-            <article class="admin-stat"><div class="stat-top"><span>Inventory alerts</span><span class="stat-icon amber">!</span></div><strong id="dashInventoryAlerts">0</strong><small><span class="stat-note">Low stock or unaccounted</span></small></article>
-            <article class="admin-stat"><div class="stat-top"><span>Pending reports</span><span class="stat-icon slate">▤</span></div><strong id="dashPendingReports">0</strong><small><span class="stat-note">Awaiting submission</span></small></article>
-          </div>
+.vendor-tabs{display:flex;gap:7px;margin:22px 0 15px;padding:4px;border:1px solid var(--line);border-radius:11px;background:#fff;width:max-content}
+.vendor-tab{display:flex;align-items:center;gap:8px;padding:9px 13px;border:0;border-radius:8px;background:transparent;color:var(--muted);font-size:11px;font-weight:800}
+.vendor-tab.active{background:#800000;color:#fff}.vendor-tab>span{display:grid;min-width:19px;height:19px;place-items:center;border-radius:20px;background:rgba(128,0,0,.08);font-size:9px}.vendor-tab.active>span{background:rgba(255,255,255,.2)}
+.vendor-view[hidden]{display:none!important}
+.barcode-scan-panel{display:grid;grid-template-columns:36px minmax(150px,.8fr) minmax(180px,1fr) auto;align-items:center;gap:10px;margin:20px 0 0;padding:13px;border:1px solid #e8e4de;border-radius:13px;background:#fff;box-shadow:0 4px 16px rgba(27,30,39,.035)}
+.barcode-scan-icon{width:34px;height:34px;display:grid;place-items:center;border-radius:9px;background:#f8eeee;color:#800000;font-size:20px}
+.barcode-scan-copy strong,.barcode-scan-copy span{display:block}.barcode-scan-copy strong{font-size:11px}.barcode-scan-copy span{margin-top:4px;color:#8d8e96;font-size:9px}
+#barcodeInput{width:100%;height:38px;min-width:0;padding:0 11px;border:1px solid #e4e3e7;border-radius:8px;outline:none;font-size:11px}#barcodeInput:focus{border-color:#800000;box-shadow:0 0 0 3px rgba(128,0,0,.08)}
+.barcode-scan-panel>.primary{height:38px;padding:0 13px;border-radius:8px;font-size:10px;white-space:nowrap}.barcode-message{grid-column:3/-1;min-height:0;margin:-6px 0 0;color:#800000;font-size:9px}
+.registered-products-view{margin-top:7px;padding:18px;border:1px solid var(--line);border-radius:14px;background:#fff}
+.registered-products-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}.registered-products-heading h3{margin:0;font-size:18px}.registered-products-heading p{margin:5px 0 0;color:var(--muted);font-size:11px}.registered-products-heading .primary{padding:9px 12px;border-radius:9px;font-size:10px;white-space:nowrap}
+.registered-products-search{display:flex;align-items:center;gap:8px;max-width:380px;margin:17px 0 12px;padding:0 11px;border:1px solid var(--line);border-radius:9px;background:#fff;color:#8a8b92}.registered-products-search span{font-size:20px}.registered-products-search input{width:100%;height:36px;border:0;outline:0;background:transparent;font-size:10px}
+.registered-products-table{border:1px solid #eeedf0;border-radius:9px}.registered-products-table table{min-width:680px}.barcode-cell{padding:4px 6px;border-radius:5px;background:#f6f5f4;color:#555660;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:9px;letter-spacing:.04em}
+.registered-product-name{font-weight:750;color:#35353d}.registered-product-actions{display:flex;gap:5px}.registered-product-actions .small-btn{padding:5px 7px;font-size:8px;white-space:nowrap}
+.registered-products-note{margin:12px 0 0;color:#9999a1;font-size:9px}
+.sale-barcode-entry{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:3px 0}.sale-barcode-entry span{min-width:0;color:#62636b;font-size:8px}.sale-barcode-entry .barcode-cell{white-space:nowrap}
+@media(max-width:980px){.barcode-scan-panel{grid-template-columns:34px minmax(0,1fr) minmax(170px,1fr) auto}}
+@media(max-width:620px){.vendor-tabs{width:100%;margin:16px 0 11px}.vendor-tab{flex:1;justify-content:center;padding:9px 7px;font-size:10px}.barcode-scan-panel{grid-template-columns:34px minmax(0,1fr) auto;gap:8px;padding:11px}.barcode-scan-copy{grid-column:2/4}.barcode-scan-panel #barcodeInput{grid-column:1/3}.barcode-scan-panel>.primary{grid-column:3;grid-row:2}.barcode-message{grid-column:1/-1;margin:0}.registered-products-view{padding:13px}.registered-products-heading h3{font-size:15px}.registered-products-heading p{max-width:220px;font-size:9px}.registered-products-heading .primary{padding:8px;font-size:9px}.registered-products-search{max-width:none}}
 
-          <div class="admin-content-grid">
-            <section class="admin-card sales-chart-card">
-              <div class="admin-card-heading"><div><h3>Sales performance</h3><p>Daily gross sales across all shops</p></div><span class="chart-period">Last 7 days</span></div>
-              <div class="chart-summary"><strong id="chartTotalSales">₱0</strong><span>Gross sales · last 7 days</span></div>
-              <div class="chart-container" id="salesTrendChart" role="img" aria-label="Sales over the last seven days"></div>
-              <div class="chart-legend"><span class="chart-legend-swatch"></span><span>Gross sales</span></div>
-            </section>
-            <section class="admin-card notifications-card">
-              <div class="admin-card-heading"><div><h3>Recent activities</h3><p>Latest sales recorded across shops</p></div><span class="card-more">•••</span></div>
-              <div class="reminder-list activity-list" id="adminReminderList"></div>
-              <button type="button" class="text-action" data-admin-view="sales">View daily sales <span>→</span></button>
-            </section>
-          </div>
-
-          <section class="admin-card shops-card">
-            <div class="admin-card-heading"><div><h3>Managed shops</h3><p>Monitor shop activity and inventory at a glance.</p></div><button type="button" class="outline-button" id="overviewAddShop">＋ Add shop</button></div>
-            <div id="adminShopCards" class="admin-shop-cards"></div>
-          </section>
-          <section class="admin-card payment-reminders-card">
-            <div class="admin-card-heading"><div><h3>Payment reminders</h3><p>Upcoming, paid, and overdue shop payments.</p></div><button type="button" class="text-action" data-admin-view="reports">Manage reminders <span>→</span></button></div>
-            <div class="reminder-list" id="adminPaymentReminderList"></div>
-          </section>
-        </section>
-
-        <section class="admin-view" data-admin-panel="sales">
-          <section class="admin-card report-filter-card">
-            <div class="admin-card-heading"><div><h3>Daily sales summary</h3><p>Review transactions by shop and date range.</p></div><div class="report-controls"><div class="date-range-controls"><label class="report-date-control">From<input id="rgoReportFrom" type="date" /></label><label class="report-date-control">To<input id="rgoReportTo" type="date" /></label></div><button class="secondary" id="downloadDailySalesExcel" type="button">Download Excel</button></div></div>
-            <div class="admin-report-metrics">
-              <article><span>Shops included</span><strong id="reportShopCount">0</strong></article>
-              <article><span>Transactions</span><strong id="reportSaleCount">0</strong><small id="reportSaleDateCaption">Selected date</small></article>
-              <article><span>Actual sales</span><strong id="reportActualSales">₱0.00</strong><small>After discounts</small></article>
-              <article><span>Inventory units</span><strong id="reportInventoryUnits">0</strong><small id="reportInventoryValue">₱0.00 inventory value</small></article>
-            </div>
-          </section>
-          <section class="admin-card admin-table-card">
-            <div class="admin-card-heading"><div><h3>Sales by shop</h3><p>Gross sales, discounts, and actual sales for the selected date range.</p></div><button class="secondary" id="openSalesHistory" type="button">Transaction history</button></div>
-            <div class="table-wrap"><table><thead><tr><th>Shop</th><th>Transactions</th><th>Gross sales</th><th>Discounts</th><th>Actual sales</th></tr></thead><tbody id="dailySalesReport"></tbody><tfoot id="dailySalesReportTotals"></tfoot></table></div>
-          </section>
-          <section class="admin-card admin-table-card">
-            <div class="admin-card-heading"><div><h3>Products sold by barcode</h3><p>Product barcodes and quantities included in sales for this date range.</p></div></div>
-            <div class="table-wrap"><table><thead><tr><th>Date</th><th>Shop</th><th>Official receipt</th><th>Barcode</th><th>Product</th><th>Quantity</th><th>Amount</th></tr></thead><tbody id="dailySalesBarcodes"></tbody></table></div>
-          </section>
-          <section class="admin-card admin-table-card">
-            <div class="admin-card-heading"><div><h3>Official receipts</h3><p>Transaction official receipts for the selected date range.</p></div></div>
-            <div class="table-wrap"><table><thead><tr><th>Shop</th><th>Official receipt</th><th>Date</th><th>Payment</th><th>Total</th><th></th></tr></thead><tbody id="supportingDocumentsReport"></tbody></table></div>
-          </section>
-        </section>
-
-        <section class="admin-view" data-admin-panel="inventory">
-          <div class="admin-stat-grid inventory-stat-grid">
-            <article class="admin-stat"><div class="stat-top"><span>Products in stock</span><span class="stat-icon green">✓</span></div><strong id="dashInStock">0</strong><small>Available for sale</small></article>
-            <article class="admin-stat"><div class="stat-top"><span>Low stock alerts</span><span class="stat-icon amber">!</span></div><strong id="dashLowStock">0</strong><small>5 units or fewer</small></article>
-            <article class="admin-stat"><div class="stat-top"><span>Out of stock</span><span class="stat-icon burgundy">×</span></div><strong id="dashOutStock">0</strong><small>Restock recommended</small></article>
-            <article class="admin-stat"><div class="stat-top"><span>Unaccounted</span><span class="stat-icon amber">⚠</span></div><strong id="dashUnaccounted">0</strong><small>Needs review</small></article>
-          </div>
-          <section class="admin-card admin-table-card">
-            <div class="admin-card-heading"><div><h3>Inventory monitoring</h3><p>Compare system stock with each shop’s actual physical count. Review unaccounted differences separately.</p></div><div class="report-actions"><button class="secondary" id="manageShopInventory" type="button">Manage selected shop</button><button class="secondary" id="downloadInventoryReport" type="button">Download CSV</button></div></div>
-            <div class="table-wrap"><table><thead><tr><th>Shop</th><th>Product ID</th><th>Barcode</th><th>Product</th><th>Category</th><th>System stock</th><th>Actual count</th><th>Status</th><th>Unaccounted unit barcodes</th><th>Last updated</th><th>Units sold</th><th>Unit price</th><th>Stock value</th></tr></thead><tbody id="shopInventoryReport"></tbody></table></div>
-          </section>
-        </section>
-
-        <section class="admin-view" data-admin-panel="reports">
-          <section class="admin-card report-filter-card quarterly-report-controls">
-            <div class="admin-card-heading"><div><h3>Quarterly sales report</h3><p>Choose a year and quarter to review month-to-date sales and royalty.</p></div><div class="report-controls"><div class="report-date-control"><label for="financialReportYear">Year</label><input id="financialReportYear" type="number" min="2000" max="2100" step="1" /></div><div class="report-date-control"><label for="financialReportQuarter">Quarter</label><select id="financialReportQuarter"><option value="1">1st Quarter</option><option value="2">2nd Quarter</option><option value="3">3rd Quarter</option><option value="4">4th Quarter</option></select></div><div class="quarterly-fixed-rate"><span>Royalty rate</span><strong>5%</strong></div><button type="button" class="primary" id="printFinancialReport">Export / Print report</button><button type="button" class="secondary" id="downloadFinancialReport">Download quarterly CSV</button></div></div>
-          </section>
-          <section class="daily-sales-report-sheet quarterly-sales-report-sheet" id="quarterlySalesReportSheet" aria-label="Quarterly sales report">
-            <header class="daily-report-header">
-              <div class="daily-report-title"><h2>QUARTERLY SALES REPORT</h2><p id="quarterlyReportCaption">Selected quarter</p><p id="royaltyPaymentDate">Royalty payment date: Not recorded</p><p>Royalty rate: 5%</p><p>Amounts in PHP</p></div>
-            </header>
-            <div class="daily-report-grid">
-              <section class="daily-report-section"><h3>Monthly sales breakdown</h3><table><thead><tr><th>Month</th><th>Gross sales</th><th>Net sales</th><th>Royalty · 5%</th></tr></thead><tbody id="quarterlyMtdReport"></tbody></table></section>
-              <section class="daily-report-section"><h3>Quarter gross sales · 3 months</h3><table><tbody id="quarterlyGrossReport"></tbody></table></section>
-              <section class="daily-report-section"><h3>Sales by category</h3><table><thead><tr><th>Category</th><th>Units</th><th>Net sales</th><th>Share</th></tr></thead><tbody id="quarterlyCategoryReport"></tbody></table></section>
-              <section class="daily-report-section"><h3>Payment method</h3><table><thead><tr><th>Method</th><th>Official receipts</th><th>Net sales</th><th>Share</th></tr></thead><tbody id="quarterlyPaymentReport"></tbody></table></section>
-            </div>
-            <footer class="daily-report-signatures"><span>Prepared by: __________________　 Signature: __________________</span><span>Reviewed by: __________________　 Signature: __________________</span></footer>
-          </section>
-          <section class="admin-card admin-table-card">
-            <div class="admin-card-heading"><div><h3>Financial summary by shop</h3><p>Gross sales, discounts, and net sales for the selected quarter.</p></div></div>
-            <div class="table-wrap"><table><thead><tr><th>Shop</th><th>Gross sales</th><th>Discounts</th><th>Net sales</th><th>Transactions</th></tr></thead><tbody id="shopFinancialReport"></tbody></table></div>
-          </section>
-          <section class="admin-card admin-table-card quarterly-card quarterly-statement-card">
-            <div class="admin-card-heading"><div><h3>Quarterly financial statement</h3><p id="quarterlyCaption">Selected quarter</p></div><span class="quarterly-badge">FS · ROYALTY</span></div>
-            <div class="table-wrap"><table><thead><tr><th>Month</th><th>Gross sales</th><th>Discounts</th><th>Net sales</th><th>Royalty rate</th><th>Royalty due</th></tr></thead><tbody id="quarterlyFinancialReport"></tbody></table></div>
-            <p class="report-help">Royalty is computed at the fixed 5% rate on gross sales.</p>
-          </section>
-          <section class="admin-card admin-table-card quarterly-card">
-            <div class="admin-card-heading"><div><h3>Quarterly sales snapshot</h3><p>Top product and transaction overview</p></div><span class="quarterly-badge">QUARTERLY</span></div>
-            <div class="quarterly-stats"><div><span>Gross sales</span><strong id="quarterGrossSales">₱0.00</strong></div><div><span>Transactions</span><strong id="quarterTransactions">0</strong></div><div><span>Best-selling product</span><strong id="quarterBestSeller">—</strong></div></div>
-          </section>
-          <section class="admin-card payment-management-card">
-            <div class="admin-card-heading"><div><h3>Payment reminders</h3><p>Add royalty or other shop payment due dates; status is computed from its due date and payment record.</p></div></div>
-            <form id="paymentReminderForm" class="payment-reminder-form">
-              <div><label for="reminderShop">Shop</label><select id="reminderShop" required></select></div>
-              <div><label for="reminderDueDate">Due date</label><input id="reminderDueDate" type="date" required /></div>
-              <div><label for="reminderAmount">Amount (₱)</label><input id="reminderAmount" type="number" min="0" step="0.01" required /></div>
-              <button type="submit" class="primary">＋ Add reminder</button>
-              <p id="paymentReminderMessage" class="user-form-message" role="status"></p>
-            </form>
-            <div class="table-wrap"><table><thead><tr><th>Shop</th><th>Due date</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody id="paymentRemindersTable"></tbody></table></div>
-          </section>
-        </section>
-
-        <section class="admin-view" data-admin-panel="documents">
-          <section class="admin-card document-upload-card">
-            <div><span class="stat-icon burgundy">↥</span><h3>Supporting documents</h3><p>Store proof of purchase, remittance documents, official receipts, and other shop documents in this browser.</p></div>
-            <div class="document-upload-actions"><label for="documentCategory" class="visually-hidden">Document category</label><select id="documentCategory"><option>Proof of Purchase</option><option>Remittance Documents</option><option>Official Receipts</option><option>Other Documents</option></select><label class="upload-button" for="documentFile">＋ Upload document</label></div>
-            <input id="documentFile" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx" class="visually-hidden" />
-          </section>
-          <section class="admin-card admin-table-card">
-            <div class="admin-card-heading"><div><h3>Document library</h3><p>PDF, JPG, PNG, and DOCX · 2 MB maximum per file, stored in this browser.</p></div><label class="document-filter-label" for="documentCategoryFilter">Category</label><select id="documentCategoryFilter"><option value="all">All documents</option><option>Proof of Purchase</option><option>Remittance Documents</option><option>Official Receipts</option><option>Other Documents</option></select></div>
-            <div class="table-wrap"><table><thead><tr><th>File name</th><th>Category</th><th>Date uploaded</th><th>Shop</th><th>Actions</th></tr></thead><tbody id="documentsTable"></tbody></table></div>
-          </section>
-        </section>
-
-        <section class="admin-view" data-admin-panel="users">
-          <section class="admin-card admin-table-card">
-            <div class="admin-card-heading"><div><h3>Registered users</h3><p>Unique user codes are required at sign-in. Do not share a code with other shop accounts.</p></div></div>
-            <div class="table-wrap"><table><thead><tr><th>Username</th><th>Unique user code</th><th>Role</th><th>Account type</th><th>Actions</th></tr></thead><tbody id="usersTable"></tbody></table></div>
-            <p class="report-help">This prototype stores account codes and credentials in browser storage. Use a secure backend for real accounts and access control.</p>
-          </section>
-        </section>
-
-        <section class="admin-view" data-admin-panel="settings">
-          <section class="admin-card settings-card">
-            <div class="admin-card-heading"><div><h3>Inventory alerts</h3><p>Choose when a product should be flagged as low stock.</p></div></div>
-            <form id="settingsForm" class="settings-form">
-              <div><label for="lowStockThreshold">Low stock threshold</label><div class="setting-number"><input id="lowStockThreshold" type="number" min="1" max="1000" step="1" required /><span>units or fewer</span></div></div>
-              <button type="submit" class="primary">Save settings</button>
-              <p id="settingsMessage" class="user-form-message" role="status"></p>
-            </form>
-          </section>
-          <section class="admin-card settings-card">
-            <div class="admin-card-heading"><div><h3>System information</h3><p>Deployment and storage details for this demo workspace.</p></div></div>
-            <div class="system-info-grid"><div><span>Application</span><strong>SinTalaan POS & Inventory Monitoring System</strong></div><div><span>Department</span><strong>PUP Resource Generation Office</strong></div><div><span>Storage</span><strong>Local browser storage</strong></div><div><span>Network sync</span><strong>Not configured</strong></div></div>
-            <p class="report-help">Connect a backend before using this prototype for production data, multi-device collaboration, or official reporting.</p>
-          </section>
-        </section>
-
-        <section class="admin-data-store" aria-hidden="true">
-          <h3 id="shopOverviewTitle">Consolidated Reports Overview</h3>
-          <table><tbody id="legacyReportStore"></tbody></table>
-        </section>
-      </div>
-    </main>
-
-    <main class="layout" id="posLayout">
-      <section class="products-panel">
-        <div class="hero">
-          <div>
-            <span class="eyebrow">POINT OF SALE</span>
-            <h2>Welcome back! 👋</h2>
-            <p>Choose a souvenir, add it to the cart, and complete the sale in seconds.</p>
-          </div>
-          <div class="hero-art">
-            <div class="floating-card">🇵🇭</div>
-            <div class="floating-card small">✨</div>
-          </div>
-        </div>
-
-        <div class="vendor-tabs" role="tablist" aria-label="Shop tools">
-          <button class="vendor-tab active" id="posTab" type="button" role="tab" aria-selected="true" aria-controls="posView">Point of Sale</button>
-          <button class="vendor-tab" id="registeredProductsTab" type="button" role="tab" aria-selected="false" aria-controls="registeredProductsView">Registered Products <span id="registeredProductsCount">0</span></button>
-          <button class="vendor-tab" id="shopFinancialReportsTab" type="button" role="tab" aria-selected="false" aria-controls="shopFinancialReportsView">Financial Reports</button>
-        </div>
-
-        <div id="posView" class="vendor-view active" role="tabpanel" aria-labelledby="posTab">
-        <form id="barcodeForm" class="barcode-scan-panel">
-          <div class="barcode-scan-icon" aria-hidden="true">▥</div>
-          <div class="barcode-scan-copy"><strong>Scan or enter a unit barcode</strong><span>Scan the exact stock unit being sold, e.g. A000003.</span></div>
-          <label for="barcodeInput" class="visually-hidden">Scan or enter barcode</label>
-          <input id="barcodeInput" type="text" inputmode="text" autocomplete="off" placeholder="e.g. A000003" />
-          <button class="primary" type="submit">Add unit</button>
-          <p id="barcodeMessage" class="barcode-message" aria-live="polite"></p>
-        </form>
-
-        <div class="toolbar">
-          <div>
-            <h3>Souvenir Collection</h3>
-            <p id="productCountText">0 products available</p>
-          </div>
-          <div class="search-wrap">
-            <span>⌕</span>
-            <input id="searchInput" type="search" placeholder="Search products..." />
-          </div>
-        </div>
-
-        <div id="categoryFilters" class="filters"></div>
-        <div id="productGrid" class="product-grid"></div>
-        </div>
-
-        <section id="registeredProductsView" class="vendor-view registered-products-view" role="tabpanel" aria-labelledby="registeredProductsTab" hidden>
-          <div class="registered-products-heading"><div><h3>Registered products</h3><p>Manage your shop’s product catalog, unique barcodes, system stock, and actual counts.</p></div><button id="registeredAddProduct" type="button" class="primary">＋ Add product</button></div>
-          <div class="registered-products-search"><span aria-hidden="true">⌕</span><label for="registeredProductSearch" class="visually-hidden">Search registered products</label><input id="registeredProductSearch" type="search" placeholder="Search name, category, or barcode..." /></div>
-          <div class="table-wrap registered-products-table"><table><thead><tr><th>Catalog barcode</th><th>Product</th><th>Category</th><th>Price</th><th>System stock</th><th>Actual count</th><th>Status</th><th>Actions</th></tr></thead><tbody id="registeredProductsTable"></tbody></table></div>
-          <p class="registered-products-note">Catalog codes identify products (Magnets A00000, Keychains B00000, Decor C00000, etc.). Each stocked unit has its own sequential barcode, such as A000001, A000002. Scan the unit barcode at checkout; mark missing unit labels as Unaccounted in Inventory so RGO can review the exact code.</p>
-        </section>
-
-        <section id="shopFinancialReportsView" class="vendor-view shop-financial-reports-view" role="tabpanel" aria-labelledby="shopFinancialReportsTab" hidden>
-          <div class="registered-products-heading"><div><h3>Quarterly financial statement</h3><p>Your shop’s sales, discounts, net sales, and royalty summary.</p></div></div>
-          <div class="shop-report-controls">
-            <label for="shopFinancialReportYear">Year<input id="shopFinancialReportYear" type="number" min="2000" max="2100" step="1" /></label>
-            <label for="shopFinancialReportQuarter">Quarter<select id="shopFinancialReportQuarter"><option value="1">1st Quarter</option><option value="2">2nd Quarter</option><option value="3">3rd Quarter</option><option value="4">4th Quarter</option></select></label>
-          </div>
-          <section class="daily-sales-report-sheet quarterly-sales-report-sheet shop-quarterly-report-sheet" aria-label="Shop quarterly financial statement">
-            <header class="daily-report-header"><div class="daily-report-title"><h2>QUARTERLY FINANCIAL STATEMENT</h2><p id="shopQuarterlyReportCaption">Selected quarter</p><p id="shopRoyaltyPaymentDate">Royalty payment date: Not recorded</p><p>Amounts in PHP</p></div></header>
-            <div class="table-wrap"><table><thead><tr><th>Month</th><th>Gross sales</th><th>Discounts</th><th>Net sales</th><th>Royalty · 5%</th></tr></thead><tbody id="shopQuarterlyFinancialReport"></tbody></table></div>
-            <div class="table-wrap"><table><tbody id="shopQuarterlyTotals"></tbody></table></div>
-          </section>
-        </section>
-      </section>
-
-      <aside class="cart-panel">
-        <div class="cart-heading">
-          <div>
-            <span class="eyebrow">CURRENT ORDER</span>
-            <h2>Shopping Cart</h2>
-          </div>
-          <button id="clearCartBtn" class="clear-btn">Clear</button>
-        </div>
-
-        <div class="cart-counter" id="cartCounter">0 items</div>
-        <div id="cartItems" class="cart-items">
-          <div class="empty-state">
-            <div class="empty-icon">🛍️</div>
-            <strong>Your cart is empty</strong>
-            <span>Add a souvenir to begin a sale.</span>
-          </div>
-        </div>
-
-        <div class="summary-box">
-          <div class="summary-row"><span>Subtotal</span><strong id="subtotal">₱0.00</strong></div>
-          <div class="summary-row discount-line">
-            <span>Discount</span>
-            <div class="discount-row">
-              <input id="discountInput" type="number" min="0" step="1" value="0" />
-              <select id="discountType">
-                <option value="fixed">₱</option>
-                <option value="percent">%</option>
-              </select>
-            </div>
-          </div>
-          <div class="summary-row grand-total"><span>Total</span><strong id="total">₱0.00</strong></div>
-        </div>
-
-        <div class="payment-box">
-          <label>Payment Method</label>
-          <div class="payment-methods">
-            <button class="pay-method active" data-method="Cash">💵 Cash</button>
-            <button class="pay-method" data-method="QRPH">▦ QRPH</button>
-            <button class="pay-method" data-method="Card">💳 Card</button>
-          </div>
-          <select id="paymentMethod" class="hidden-select">
-            <option value="Cash">Cash</option>
-            <option value="QRPH">QRPH</option>
-            <option value="Card">Card</option>
-          </select>
-
-          <div id="cashBlock">
-            <label for="cashInput">Cash Received</label>
-            <div class="money-input"><span>₱</span><input id="cashInput" type="number" min="0" step="0.01" placeholder="0.00" /></div>
-            <div class="change-card"><span>Change</span><strong id="change">₱0.00</strong></div>
-          </div>
-
-          <button id="checkoutBtn" class="checkout-btn">Complete Sale <span>→</span></button>
-        </div>
-      </aside>
-    </main>
-  </div>
-
-  <div id="notificationModal" class="modal hidden">
-    <div class="modal-card">
-      <div class="modal-header">
-        <div><span class="eyebrow">RESOURCE GENERATION OFFICE</span><h2>Notifications</h2></div>
-        <button class="icon-btn" data-close="notificationModal">✕</button>
-      </div>
-      <div id="notificationList" class="notification-list"></div>
-    </div>
-  </div>
-
-  <div id="addShopModal" class="modal hidden">
-    <div class="modal-card">
-      <div class="modal-header">
-        <div><span class="eyebrow">RESOURCE GENERATION OFFICE</span><h2>Add another shop</h2></div>
-        <button class="icon-btn" data-close="addShopModal" type="button">✕</button>
-      </div>
-
-      <form id="addShopForm" class="add-shop-form">
-        <label for="newShopName">Shop name</label>
-        <input id="newShopName" name="shopName" required maxlength="60" placeholder="e.g. Campus Bookstore" />
-        <p id="addShopError" class="login-error hidden" role="alert"></p>
-        <div class="form-actions">
-          <button class="primary" type="submit">Add shop</button>
-          <button class="secondary" type="button" data-close="addShopModal">Cancel</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <div id="staffDocumentsModal" class="modal hidden">
-    <div class="modal-card large">
-      <div class="modal-header"><div><span class="eyebrow">SHOP WORKSPACE</span><h2>Supporting documents</h2></div><button class="icon-btn" data-close="staffDocumentsModal" type="button">✕</button></div>
-      <div class="staff-document-upload"><label for="staffDocumentCategory">Category</label><select id="staffDocumentCategory"><option>Proof of Purchase</option><option>Remittance Documents</option><option>Official Receipts</option><option>Other Documents</option></select><label class="upload-button" for="staffDocumentFile">＋ Upload document</label><input id="staffDocumentFile" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx" class="visually-hidden" /></div>
-      <p class="report-help">PDF, JPG, PNG, and DOCX · 2 MB maximum per file. Documents are stored in this browser.</p>
-      <div class="table-wrap"><table><thead><tr><th>File name</th><th>Category</th><th>Date uploaded</th><th>Actions</th></tr></thead><tbody id="staffDocumentsTable"></tbody></table></div>
-    </div>
-  </div>
-
-  <div id="toast" class="toast hidden">Added to cart</div>
-
-  <div id="inventoryModal" class="modal hidden">
-    <div class="modal-card large">
-      <div class="modal-header">
-        <div><span class="eyebrow">STORE MANAGEMENT</span><h2>Inventory</h2></div>
-        <button class="icon-btn" data-close="inventoryModal">✕</button>
-      </div>
-
-      <form id="productForm" class="product-form">
-        <input type="hidden" id="productId" />
-        <div><label for="productName">Product Name</label><input id="productName" required placeholder="e.g. Manila Mug" /></div>
-        <div><label for="productCategory">Category</label><input id="productCategory" required placeholder="e.g. Mugs" /></div>
-        <div class="product-barcode-field"><label for="productBarcode">Catalog barcode / item code</label><div><input id="productBarcode" inputmode="text" autocomplete="off" placeholder="e.g. A00000" /><button id="generateBarcodeBtn" type="button" class="secondary">Generate</button></div></div>
-        <div><label for="productPrice">Price</label><input id="productPrice" type="number" required min="0" step="0.01" placeholder="0.00" /></div>
-        <div><label for="productCost">Unit cost (optional)</label><input id="productCost" type="number" min="0" step="0.01" placeholder="Not recorded" /></div>
-        <div><label for="productStock">Initial stock units</label><input id="productStock" type="number" required min="0" step="1" placeholder="0" /></div>
-        <div><label for="productActualStock">Initial physical count</label><input id="productActualStock" type="number" required min="0" step="1" placeholder="0" /></div>
-        <div class="form-actions">
-          <button class="primary" type="submit">Save Product</button>
-          <button class="secondary" type="button" id="resetProductForm">Reset</button>
-        </div>
-        <p id="productFormMessage" class="product-form-message" aria-live="polite"></p>
-      </form>
-
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Product</th><th>Catalog barcode</th><th>Category</th><th>Price</th><th>System stock</th><th>Actual count</th><th>Status</th><th>Unit barcodes / reconciliation</th><th id="inventoryActionsHeader">Actions</th></tr></thead>
-          <tbody id="inventoryTable"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <div id="salesModal" class="modal hidden">
-    <div class="modal-card large">
-      <div class="modal-header">
-        <div><span class="eyebrow">PERFORMANCE</span><h2>Sales History</h2></div>
-        <button class="icon-btn" data-close="salesModal">✕</button>
-      </div>
-
-      <div id="rgoSalesPeriod" class="sales-period hidden">
-        <label for="salesPeriod">Report period</label>
-        <select id="salesPeriod">
-          <option value="daily">Daily</option>
-          <option value="monthly">Monthly</option>
-        </select>
-        <label id="salesReportDateLabel" for="salesReportDate">Date</label>
-        <input id="salesReportDate" type="date" />
-        <label id="salesReportMonthLabel" for="salesReportMonth" class="hidden">Month</label>
-        <input id="salesReportMonth" type="month" class="hidden" />
-      </div>
-
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Official receipt</th><th>Date</th><th>Items</th><th>Sold barcodes</th><th>Payment</th><th>Total</th><th></th></tr></thead>
-          <tbody id="salesTable"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <div id="receiptModal" class="modal hidden">
-    <div class="modal-card receipt-card">
-      <div class="modal-header no-print">
-      <div><span class="eyebrow">TRANSACTION COMPLETE</span><h2>Official Receipt</h2></div>
-        <button class="icon-btn" data-close="receiptModal">✕</button>
-      </div>
-      <div id="receiptContent"></div>
-      <button id="printReceiptBtn" class="checkout-btn no-print">Print / Save Official Receipt as PDF 🖨️</button>
-    </div>
-  </div>
-
-  <script src="app.js"></script>
-</body>
-</html>
+.chart-legend{display:flex;align-items:center;gap:6px;margin-top:3px;color:#777982;font-size:9px}.chart-legend-swatch{width:9px;height:9px;border-radius:50%;background:#800000}
+.date-range-controls{display:flex;align-items:end;gap:12px}.date-range-controls .report-date-control{display:grid;gap:6px}.date-range-controls input{height:34px;padding:0 8px;border:1px solid #e5e4e9;border-radius:8px;background:#fff;color:#5f6068}
+.report-controls select,.report-controls input{height:34px;padding:0 8px;border:1px solid #e5e4e9;border-radius:8px;background:#fff;color:#5f6068}
+.payment-reminders-card{margin-top:15px}.payment-reminder-form{display:grid;grid-template-columns:1.2fr 1fr 1fr auto;align-items:end;gap:10px;margin-bottom:16px}.payment-reminder-form>div{display:grid;gap:5px}.payment-reminder-form label{color:#777982;font-size:9px}.payment-reminder-form input,.payment-reminder-form select{height:35px;min-width:0;padding:0 9px;border:1px solid #e5e4e9;border-radius:8px;background:#fff;color:#5f6068;font-size:10px}.payment-reminder-form button{height:35px;padding:0 11px;border-radius:8px;font-size:9px}.payment-reminder-form .user-form-message{grid-column:1/-1;margin:0}
+.payment-status{display:inline-flex;padding:4px 7px;border-radius:20px;font-size:8px;font-weight:800;white-space:nowrap}.payment-status.upcoming{background:#fff4dc;color:#a87511}.payment-status.paid{background:#e8f4ee;color:#398268}.payment-status.overdue{background:#f8eaea;color:#a33}
+.reminder-icon.upcoming{background:#fff4dc;color:#a87511}.reminder-icon.overdue{background:#f8eaea;color:#a33}
+.inventory-status.unaccounted{background:#fff1df;color:#a45c06}.unaccounted-row{background:#fffaf2}.statement-total-row{border-top:2px solid #d9d5d5;background:#faf7f5}.statement-total-row th{color:#46434a;font-size:9px}
+.inventory-stat-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:900px){.payment-reminder-form{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.date-range-controls{flex-wrap:wrap}.date-range-controls .report-date-control{min-width:130px}.payment-reminder-form{grid-template-columns:1fr}.payment-reminder-form .user-form-message{grid-column:auto}.report-controls .report-date-control{width:100%}.report-controls .report-date-control input,.report-controls .report-date-control select{width:100%}.inventory-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.report-export-controls{align-items:flex-end}.report-export-controls .primary{height:36px;padding:0 12px;border-radius:8px;font-size:10px;white-space:nowrap}
+.report-inputs{margin-top:12px;border-top:1px solid #eeedf0;padding-top:10px}.report-inputs summary{color:#800000;font-size:9px;font-weight:800;cursor:pointer}.report-input-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}.report-input-grid label{display:grid;gap:5px;color:#777982;font-size:9px}.report-input-grid input{width:100%;height:34px;padding:0 9px;border:1px solid #e5e4e9;border-radius:8px;background:#fff;color:#555660;font-size:10px}.report-input-grid .report-notes-field{grid-column:span 2}.report-input-message{grid-column:1/-1;margin:0}
+.daily-sales-report-sheet{padding:18px 20px;border:1px solid #dedfe3;background:#fff;color:#1e2738;font-family:Arial,Helvetica,sans-serif}
+.daily-report-header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;padding:0 0 12px;border-bottom:2px solid #26334c}
+.daily-report-business h1{margin:0 0 6px;font-size:20px;line-height:1.15}.daily-report-business p,.daily-report-title p{margin:3px 0;color:#50545d;font-size:9px;line-height:1.25}
+.daily-report-title{text-align:right}.daily-report-title h2{margin:0 0 5px;color:#253149;font-size:19px;letter-spacing:.025em}.daily-sales-report-sheet .daily-report-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:14px 20px;margin-top:13px}
+.daily-report-section{min-width:0}.daily-report-section h3{margin:0;padding:5px 7px;background:#253149;color:#fff;text-align:center;font-size:10px;line-height:1.2}
+.daily-report-section table{width:100%;border-collapse:collapse;table-layout:auto;font-size:9px}.daily-report-section th,.daily-report-section td{padding:4px 6px;border:1px solid #d5d7dc;font-size:8.5px;line-height:1.2}.daily-report-section thead th{background:#e8edf5;color:#1e2738;letter-spacing:0;text-align:left}.daily-report-section td:last-child,.daily-report-section th:not(:first-child){text-align:right}.daily-report-section tbody tr:nth-child(odd){background:#f8f9fb}.daily-report-section td:first-child{width:62%}.daily-report-section .daily-report-total{background:#e8edf5;font-weight:800}.daily-report-section .daily-report-total th{background:#e8edf5;color:#1e2738}.daily-report-section small.daily-report-sku{display:block;margin-top:2px;color:#626b7b;font-family:Consolas,monospace;font-size:7px}.daily-report-expenses{grid-column:1/-1}.daily-report-expenses td:first-child{width:78%}.daily-report-notes{grid-column:1/-1;min-height:45px;padding:9px;border:1px solid #d5d7dc;color:#30343b;font-size:9px;line-height:1.4}.daily-report-notes.empty-notes{color:#687080}.daily-report-signatures{display:flex;justify-content:space-between;gap:20px;margin-top:16px;padding:0 5px;color:#333740;font-size:8px}.daily-report-signatures strong{font-weight:600}
+.daily-sales-total-row th{background:#e8edf5;color:#1e2738;font-weight:800}
+.quarterly-report-controls{margin-top:4px}
+@media(max-width:700px){.report-export-controls{flex-wrap:wrap}.report-input-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.daily-sales-report-sheet{padding:13px}.daily-sales-report-sheet .daily-report-grid{gap:10px}.daily-report-business h1{font-size:15px}.daily-report-title h2{font-size:15px}.daily-report-section th,.daily-report-section td{padding:3px 4px;font-size:7px}.daily-report-signatures{flex-direction:column;gap:8px}}
+@media print{
+  @page{size:A4 portrait;margin:11mm}
+  .admin-view[data-admin-panel="reports"]>*{display:none!important}
+  .admin-view[data-admin-panel="reports"]>.daily-sales-report-sheet{display:block!important}
+  .daily-sales-report-sheet{position:static;width:100%;padding:0;border:0;box-shadow:none}
+  .daily-report-section h3{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body.print-quarterly .admin-view[data-admin-panel="reports"]>.daily-sales-report-sheet{display:none!important}
+  body.print-quarterly .admin-view[data-admin-panel="reports"]>.quarterly-sales-report-sheet{display:block!important}
+}
+@media(min-width:981px){.product-form{grid-template-columns:1.4fr 1fr 1.4fr .8fr .8fr .8fr auto}}
+@media(max-width:980px) and (min-width:621px){.product-form{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.product-form input:read-only{background:#f0efed;color:#777}
+.unit-reconcile{min-width:190px;max-width:330px;font-size:9px}
+.unit-reconcile summary{cursor:pointer;color:#665d5d;font-weight:700}
+.unit-reconcile ul{display:grid;gap:5px;max-height:180px;overflow:auto;margin:8px 0 0;padding:0;list-style:none}
+.unit-reconcile li{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.unit-status-label{font-size:8px;font-weight:700;color:#478168}
+.unit-status-label.unaccounted{color:#a45c06}
+.unit-status-label.sold{color:#8b7b7b}
+.add-stock-unit{margin-top:8px}
+.cart-unit-barcodes{display:block;margin:7px 0;color:#7e7272;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:9px}
+.inventory-warning{display:inline-grid;place-items:center;margin-right:5px;color:#a45c06;font-size:16px;font-weight:900;vertical-align:middle}
+.user-code-cell{font-size:12px;font-weight:800;letter-spacing:.04em}
+.shop-report-controls{display:flex;gap:12px;flex-wrap:wrap;margin:18px 0}
+.shop-report-controls label{display:grid;gap:6px;color:#111;font-size:14px;font-weight:800}
+.shop-report-controls input,.shop-report-controls select{min-width:145px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:#111}
+.shop-quarterly-report-sheet{color:#111;font-size:15px}
+.shop-quarterly-report-sheet .daily-report-title p{color:#111;font-size:15px}
+.shop-quarterly-report-sheet th,.shop-quarterly-report-sheet td{color:#111;font-size:14px}
+.shop-account #posLayout{color:#111}
+.shop-account #posLayout p,.shop-account #posLayout label,.shop-account #posLayout .eyebrow,.shop-account #posLayout .cart-counter,.shop-account #posLayout .category-pill{color:#111;font-size:14px}
+.shop-account #posLayout h2,.shop-account #posLayout h3,.shop-account #posLayout .price,.shop-account #posLayout .cart-item-name{color:#111}
+.shop-account #posLayout .hero{color:#fff}
+.shop-account #posLayout .hero h2{color:#fff}
+.shop-account #posLayout .hero p{color:#fff;font-size:16px}
+.shop-account #posLayout .hero .eyebrow{color:#ffd0c2}
+.shop-account #posLayout .product-info h3{font-size:18px}
+.shop-account #posLayout .cart-panel{font-size:15px}
+.shop-account .modal-card{color:#111;font-size:15px}
+.shop-account .modal-card h2,.shop-account .modal-card h3,.shop-account .modal-card label,.shop-account .modal-card .eyebrow{color:#111}
+.shop-account .modal-card input,.shop-account .modal-card select{color:#111;font-size:15px}
