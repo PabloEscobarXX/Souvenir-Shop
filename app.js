@@ -136,16 +136,37 @@ shops.forEach(shop=>shop.products.forEach(product=>{
 }));
 
 const LOGIN_CREDENTIALS = {
-  souvenir: { username: "shopowner", password: "owner123" },
-  rgo: { username: "admin", password: "admin123" }
+  souvenir: { username: "shopowner", password: "owner123", userCode: "PUP-SOUVENIR-01" },
+  rgo: { username: "admin", password: "admin123", userCode: "PUP-RGO-01" }
 };
 const ACCOUNTS_STORAGE_KEY = "likha_pos_accounts";
 const DEFAULT_ACCOUNTS = [
-  { role: "souvenir", username: LOGIN_CREDENTIALS.souvenir.username, password: LOGIN_CREDENTIALS.souvenir.password },
-  { role: "rgo", username: LOGIN_CREDENTIALS.rgo.username, password: LOGIN_CREDENTIALS.rgo.password }
+  { role: "souvenir", username: LOGIN_CREDENTIALS.souvenir.username, password: LOGIN_CREDENTIALS.souvenir.password, userCode: LOGIN_CREDENTIALS.souvenir.userCode },
+  { role: "rgo", username: LOGIN_CREDENTIALS.rgo.username, password: LOGIN_CREDENTIALS.rgo.password, userCode: LOGIN_CREDENTIALS.rgo.userCode }
 ];
 const savedAccounts = JSON.parse(localStorage.getItem(ACCOUNTS_STORAGE_KEY) || "null");
 const accounts = Array.isArray(savedAccounts) ? savedAccounts : DEFAULT_ACCOUNTS;
+const usedUserCodes = new Set();
+let userCodesMigrated = false;
+accounts.forEach(account=>{
+  const defaultAccount=LOGIN_CREDENTIALS[account.role]?.username===account.username
+    ?LOGIN_CREDENTIALS[account.role].userCode
+    :"";
+  let code=String(account.userCode||defaultAccount||"").trim().toUpperCase();
+  if(!code||usedUserCodes.has(code)){
+    do{code=`USER-${crypto.randomUUID().slice(0,8).toUpperCase()}`}while(usedUserCodes.has(code));
+    account.userCode=code;
+    userCodesMigrated=true;
+  }else if(account.userCode!==code){
+    account.userCode=code;
+    userCodesMigrated=true;
+  }
+  usedUserCodes.add(code);
+});
+if(userCodesMigrated){
+  try{localStorage.setItem(ACCOUNTS_STORAGE_KEY,JSON.stringify(accounts))}
+  catch(storageError){console.error("Could not save migrated user codes.",storageError)}
+}
 const DOCUMENTS_STORAGE_KEY = "sintalaan_documents";
 let documents = [];
 const PAYMENT_REMINDERS_STORAGE_KEY="sintalaan_payment_reminders";
@@ -155,8 +176,14 @@ let lowStockThreshold = 5;
 try {
   const savedDocuments = JSON.parse(localStorage.getItem(DOCUMENTS_STORAGE_KEY) || "[]");
   documents = Array.isArray(savedDocuments) ? savedDocuments : [];
+  let categoriesMigrated=false;
+  documents.forEach(document=>{
+    if(document.category==="Sales Receipts"){document.category="Official Receipts";categoriesMigrated=true}
+    if(document.category==="Payment Receipts"){document.category="Remittance Documents";categoriesMigrated=true}
+  });
+  if(categoriesMigrated)localStorage.setItem(DOCUMENTS_STORAGE_KEY,JSON.stringify(documents));
 } catch (storageError) {
-  console.error("Could not read saved documents.", storageError);
+  console.error("Could not read or migrate saved documents.", storageError);
 }
 try {
   const savedReminders=JSON.parse(localStorage.getItem(PAYMENT_REMINDERS_STORAGE_KEY)||"[]");
@@ -181,7 +208,7 @@ const els = {
   cartItems: $("cartItems"), subtotal: $("subtotal"), total: $("total"), discountInput: $("discountInput"),
   discountType: $("discountType"), paymentMethod: $("paymentMethod"), cashInput: $("cashInput"),
   change: $("change"), inventoryTable: $("inventoryTable"), salesTable: $("salesTable"),
-  salesCount: $("salesCount"), salesRevenue: $("salesRevenue"), receiptContent: $("receiptContent"),
+  receiptContent: $("receiptContent"),
   clock: $("clock"), cartCounter: $("cartCounter"), productCountText: $("productCountText"),
   cashBlock: $("cashBlock"), toast: $("toast")
 };
@@ -338,7 +365,7 @@ function renderRegisteredProducts(){
     const actualStock=Number(product.actualStock)||0;
     const unaccounted=actualStock!==stock;
     const status=unaccounted?"Unaccounted":stock===0?"Sold":"In stock";
-    return `<tr><td><code class="barcode-cell">${escapeHtml(product.barcode||"")}</code></td><td class="registered-product-name">${escapeHtml(product.name)}</td><td>${escapeHtml(product.category)}</td><td>${peso.format(Number(product.price)||0)}</td><td>${stock}</td><td>${actualStock}</td><td><span class="inventory-status ${unaccounted?"unaccounted":stock===0?"out":"in"}">${unaccounted?"⚠ RGO · ":""}${status}</span></td><td><div class="registered-product-actions"><button type="button" class="small-btn" data-edit="${escapeHtml(product.id)}">Edit</button><button type="button" class="small-btn danger-text" data-delete="${escapeHtml(product.id)}">Delete</button></div></td></tr>`;
+    return `<tr><td><code class="barcode-cell">${escapeHtml(product.barcode||"")}</code></td><td class="registered-product-name">${escapeHtml(product.name)}</td><td>${escapeHtml(product.category)}</td><td>${peso.format(Number(product.price)||0)}</td><td>${stock}</td><td>${actualStock}</td><td>${unaccounted?'<span class="inventory-warning" aria-label="Warning">⚠</span>':""}<span class="inventory-status ${unaccounted?"unaccounted":stock===0?"out":"in"}">${status}</span></td><td><div class="registered-product-actions"><button type="button" class="small-btn" data-edit="${escapeHtml(product.id)}">Edit</button><button type="button" class="small-btn danger-text" data-delete="${escapeHtml(product.id)}">Delete</button></div></td></tr>`;
   }).join(""):`<tr><td colspan="8" class="table-empty-cell">${query?"No matching products.":"No registered products yet. Add your first product to get started."}</td></tr>`;
   table.querySelectorAll("[data-edit]").forEach(button=>button.onclick=()=>{
     editProduct(button.dataset.edit);
@@ -355,7 +382,7 @@ function unitInventoryMarkup(product,canEdit){
       ?unit.systemTracked===false?"Unaccounted · extra physical unit":"Unaccounted · missing"
       :unit.status==="sold"?"Sold":"In stock";
     const action=canEdit&&unit.status!=="sold"
-      ?`<button type="button" class="small-btn" data-reconcile-unit="${escapeHtml(unit.barcode)}" data-product-id="${escapeHtml(product.id)}">${unit.status==="unaccounted"?"Mark found":"Mark missing"}</button>`
+      ?`<button type="button" class="small-btn" data-reconcile-unit="${escapeHtml(unit.barcode)}" data-product-id="${escapeHtml(product.id)}">${unit.status==="unaccounted"?"Mark found":"Mark as unaccounted"}</button>`
       :`<span class="unit-status-label ${unit.status}">${status}</span>`;
     return `<li><code class="barcode-cell">${escapeHtml(unit.barcode)}</code><span class="unit-status-label ${escapeHtml(unit.status)}">${status}</span>${action}</li>`;
   }).join("");
@@ -428,13 +455,54 @@ function addScannedProduct(event){
 }
 function setVendorView(view){
   const isProducts=view==="products";
-  $("posView").hidden=isProducts;
+  const isReports=view==="reports";
+  $("posView").hidden=isProducts||isReports;
   $("registeredProductsView").hidden=!isProducts;
-  $("posTab").classList.toggle("active",!isProducts);
+  $("shopFinancialReportsView").hidden=!isReports;
+  $("posTab").classList.toggle("active",!isProducts&&!isReports);
   $("registeredProductsTab").classList.toggle("active",isProducts);
-  $("posTab").setAttribute("aria-selected",String(!isProducts));
+  $("shopFinancialReportsTab").classList.toggle("active",isReports);
+  $("posTab").setAttribute("aria-selected",String(!isProducts&&!isReports));
   $("registeredProductsTab").setAttribute("aria-selected",String(isProducts));
+  $("shopFinancialReportsTab").setAttribute("aria-selected",String(isReports));
   if(isProducts)renderRegisteredProducts();
+  if(isReports)renderShopFinancialReport();
+}
+function renderShopFinancialReport(){
+  const reportYear=Number($("shopFinancialReportYear").value)||new Date().getFullYear();
+  const quarter=Number($("shopFinancialReportQuarter").value)||1;
+  const quarterStartMonth=(quarter-1)*3;
+  const quarterStart=`${reportYear}-${String(quarterStartMonth+1).padStart(2,"0")}`;
+  const quarterEnd=`${reportYear}-${String(quarterStartMonth+3).padStart(2,"0")}`;
+  const quarterLabel=`Q${quarter} ${reportYear} · ${new Date(reportYear,quarterStartMonth,1).toLocaleDateString("en-PH",{month:"short"})} – ${new Date(reportYear,quarterStartMonth+2,1).toLocaleDateString("en-PH",{month:"short"})}`;
+  const sales=state.currentShop.sales.filter(sale=>{
+    const month=dateKey(new Date(sale.date)).slice(0,7);
+    return month>=quarterStart&&month<=quarterEnd;
+  });
+  const monthly=Array.from({length:3},(_,index)=>{
+    const monthIndex=quarterStartMonth+index;
+    const monthKey=`${reportYear}-${String(monthIndex+1).padStart(2,"0")}`;
+    const monthSales=sales.filter(sale=>dateKey(new Date(sale.date)).slice(0,7)===monthKey);
+    const gross=monthSales.reduce((sum,sale)=>sum+(Number(sale.subtotal)||Number(sale.total)||0),0);
+    const discounts=monthSales.reduce((sum,sale)=>sum+(Number(sale.discount)||0),0);
+    const net=monthSales.reduce((sum,sale)=>sum+(Number(sale.total)||0),0);
+    return {month:new Date(reportYear,monthIndex,1).toLocaleDateString("en-PH",{month:"long",year:"numeric"}),gross,discounts,net,royalty:Math.round((gross*ROYALTY_RATE/100+Number.EPSILON)*100)/100};
+  });
+  const totals=monthly.reduce((result,row)=>({
+    gross:result.gross+row.gross,
+    discounts:result.discounts+row.discounts,
+    net:result.net+row.net,
+    royalty:result.royalty+row.royalty
+  }),{gross:0,discounts:0,net:0,royalty:0});
+  const paymentDates=paymentReminders
+    .filter(reminder=>reminder.shopId===state.currentShop.id&&reminder.paidAt)
+    .map(reminder=>new Date(reminder.paidAt))
+    .filter(date=>Number.isFinite(date.getTime())&&dateKey(date)>=`${quarterStart}-01`&&dateKey(date)<=`${quarterEnd}-31`)
+    .sort((a,b)=>b-a);
+  $("shopQuarterlyReportCaption").textContent=quarterLabel;
+  $("shopRoyaltyPaymentDate").textContent=`Royalty payment date: ${paymentDates[0]?paymentDates[0].toLocaleDateString("en-PH",{year:"numeric",month:"long",day:"numeric"}):"Not recorded"}`;
+  $("shopQuarterlyFinancialReport").innerHTML=monthly.map(row=>`<tr><td>${escapeHtml(row.month)}</td><td>${peso.format(row.gross)}</td><td>${peso.format(row.discounts)}</td><td>${peso.format(row.net)}</td><td>${peso.format(row.royalty)}</td></tr>`).join("")+`<tr class="statement-total-row"><th>Quarter total</th><th>${peso.format(totals.gross)}</th><th>${peso.format(totals.discounts)}</th><th>${peso.format(totals.net)}</th><th>${peso.format(totals.royalty)}</th></tr>`;
+  $("shopQuarterlyTotals").innerHTML=`<tr><th>Shop</th><td>${escapeHtml(state.currentShop.name)}</td></tr><tr><th>Transactions</th><td>${sales.length.toLocaleString("en-PH")}</td></tr><tr><th>Royalty rate</th><td>${ROYALTY_RATE}%</td></tr><tr><th>Total royalty due</th><td><strong>${peso.format(totals.royalty)}</strong></td></tr>`;
 }
 
 function addToCart(id,unitBarcode=""){
@@ -517,7 +585,7 @@ function renderInventory(){
   els.inventoryTable.innerHTML=state.products.map(p=>{
     const stock=Number(p.stock)||0,actualStock=Number(p.actualStock)||0,unaccounted=stock!==actualStock;
     const status=unaccounted?"Unaccounted":stock===0?"Sold":"In stock";
-    return `<tr><td>${escapeHtml(p.name)}</td><td><code class="barcode-cell">${escapeHtml(p.barcode||"")}</code></td><td>${escapeHtml(p.category)}</td><td>${peso.format(p.price)}</td><td>${stock}</td><td>${actualStock}</td><td><span class="inventory-status ${unaccounted?"unaccounted":stock===0?"out":"in"}">${unaccounted?"⚠ ":""}${status}</span></td><td>${unitInventoryMarkup(p,canReconcile)}</td>${canEdit?`<td><button class="small-btn" data-edit="${escapeHtml(p.id)}">Edit</button> <button class="small-btn danger-text" data-delete="${escapeHtml(p.id)}">Delete</button></td>`:""}</tr>`;
+    return `<tr><td>${escapeHtml(p.name)}</td><td><code class="barcode-cell">${escapeHtml(p.barcode||"")}</code></td><td>${escapeHtml(p.category)}</td><td>${peso.format(p.price)}</td><td>${stock}</td><td>${actualStock}</td><td>${unaccounted?'<span class="inventory-warning" aria-label="Warning">⚠</span>':""}<span class="inventory-status ${unaccounted?"unaccounted":stock===0?"out":"in"}">${status}</span></td><td>${unitInventoryMarkup(p,canReconcile)}</td>${canEdit?`<td><button class="small-btn" data-edit="${escapeHtml(p.id)}">Edit</button> <button class="small-btn danger-text" data-delete="${escapeHtml(p.id)}">Delete</button></td>`:""}</tr>`;
   }).join("");
   if(canEdit){
     document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>editProduct(b.dataset.edit));
@@ -622,16 +690,13 @@ function getVisibleSales(){
 }
 function renderSales(){
   const visibleSales=getVisibleSales(),isRgo=state.role==="rgo",period=$("salesPeriod").value;
-  els.salesCount.textContent=visibleSales.length;els.salesRevenue.textContent=peso.format(visibleSales.reduce((s,x)=>s+x.total,0));
-  $("salesCountCaption").textContent=isRgo?`Selected ${period==="daily"?"day's":"month's"} completed sales`:"Completed sales";
-  $("salesRevenueCaption").textContent=isRgo?`Selected ${period==="daily"?"day's":"month's"} revenue`:"All-time revenue";
   if(!visibleSales.length){els.salesTable.innerHTML=`<tr><td colspan="7">${isRgo?"No sales for this period.":"No sales yet."}</td></tr>`;return}
   els.salesTable.innerHTML=visibleSales.map(s=>`<tr><td>${escapeHtml(s.id)}</td><td>${new Date(s.date).toLocaleString("en-PH")}</td><td>${s.items.reduce((a,b)=>a+(Number(b.qty)||0),0)}</td><td>${s.items.map(item=>`<div class="sale-barcode-entry"><span>${escapeHtml(item.name)}</span><div>${getItemSoldBarcodes(item,item.categoryBarcodePrefix).map(barcode=>`<code class="barcode-cell">${escapeHtml(barcode)}</code>`).join(" ")}</div></div>`).join("")}</td><td>${escapeHtml(s.paymentMethod)}</td><td>${peso.format(s.total)}</td><td><button class="small-btn" data-receipt="${escapeHtml(s.id)}">View</button></td></tr>`).join("");
   document.querySelectorAll("[data-receipt]").forEach(b=>b.onclick=()=>{const s=state.sales.find(x=>x.id===b.dataset.receipt);if(s)showReceipt(s)});
 }
 function showReceipt(sale){
   els.receiptContent.innerHTML=`<div class="receipt"><h2>PUP SOUVENIR SHOP</h2><p>Memories made local 🇵🇭</p><hr>
-  <div class="receipt-row"><span>Receipt</span><span>${sale.id}</span></div><div class="receipt-row"><span>Date</span><span>${new Date(sale.date).toLocaleString("en-PH")}</span></div><div class="receipt-row"><span>Payment</span><span>${sale.paymentMethod}</span></div><hr>
+  <div class="receipt-row"><span>Official receipt</span><span>${sale.id}</span></div><div class="receipt-row"><span>Date</span><span>${new Date(sale.date).toLocaleString("en-PH")}</span></div><div class="receipt-row"><span>Payment</span><span>${sale.paymentMethod}</span></div><hr>
   ${sale.items.map(i=>`<div class="receipt-item"><div>${escapeHtml(i.name)}</div><small><span>Barcodes ${getItemSoldBarcodes(i,i.categoryBarcodePrefix).map(escapeHtml).join(", ")||"—"} · ${i.qty} × ${peso.format(i.price)}</span><span>${peso.format(i.lineTotal)}</span></small></div>`).join("")}<hr>
   <div class="receipt-row"><span>Subtotal</span><span>${peso.format(sale.subtotal)}</span></div><div class="receipt-row"><span>Discount</span><span>${peso.format(sale.discount)}</span></div><div class="receipt-row"><strong>TOTAL</strong><strong>${peso.format(sale.total)}</strong></div><div class="receipt-row"><span>Paid</span><span>${peso.format(sale.cashReceived)}</span></div><div class="receipt-row"><span>Change</span><span>${peso.format(sale.change)}</span></div><hr><p>Salamat! Please come again.</p></div>`;
   openModal("receiptModal");
@@ -643,6 +708,7 @@ if($("barcodeForm"))$("barcodeForm").onsubmit=addScannedProduct;
 if($("registeredProductSearch"))$("registeredProductSearch").oninput=renderRegisteredProducts;
 $("posTab").onclick=()=>setVendorView("pos");
 $("registeredProductsTab").onclick=()=>setVendorView("products");
+$("shopFinancialReportsTab").onclick=()=>setVendorView("reports");
 $("registeredAddProduct").onclick=()=>{resetProductForm();renderInventory();openModal("inventoryModal");$("productName").focus()};
 $("generateBarcodeBtn").onclick=()=>{
   try{
@@ -669,6 +735,8 @@ function updateSalesPeriodControls(){
 }
 $("salesPeriod").onchange=updateSalesPeriodControls;
 $("salesReportDate").onchange=renderSales;$("salesReportMonth").onchange=renderSales;
+$("shopFinancialReportYear").onchange=renderShopFinancialReport;
+$("shopFinancialReportQuarter").onchange=renderShopFinancialReport;
 function login(event,role){
   event.preventDefault();
   const form=event.currentTarget,username=form.elements.username.value.trim().toLowerCase(),password=form.elements.password.value;
@@ -687,17 +755,18 @@ function login(event,role){
   applyRole(role);
 }
 function applyRole(role){
-  if(role!=="souvenir"&&role!=="rgo"){state.role=null;$("appShell").classList.add("hidden");$("loginScreen").classList.remove("hidden");return}
+  if(role!=="souvenir"&&role!=="rgo"){state.role=null;document.body.classList.remove("shop-account");$("appShell").classList.add("hidden");$("loginScreen").classList.remove("hidden");return}
   state.role=role;
   $("loginScreen").classList.add("hidden");$("appShell").classList.remove("hidden");
   const isRgo=role==="rgo";
   $("appBrandTitle").textContent=isRgo?"SinTalaan":state.currentShop.name;
-  $("appBrandSubtitle").textContent=isRgo?"PUP Resource Generation Office · Sales & inventory":state.currentShop.id==="pup-souvenir-shop"?"Local finds • Happy memories":"Shop Staff | Point of Sale and Store Management";
+  $("appBrandSubtitle").textContent=isRgo?"PUP Resource Generation Office · Sales & inventory":state.currentShop.id==="pup-souvenir-shop"?"Local finds • Happy memories":"Shop Staff | Point of Sale, Store Management & Financial Reports";
   $("clock").classList.toggle("hidden",isRgo);
   $("inventoryBtn").classList.toggle("hidden",isRgo);
   $("documentsBtn").classList.toggle("hidden",isRgo);
   $("salesBtn").textContent=isRgo?"🔔 Notification":"📈 Sales";
-  $("roleBadge").textContent=role==="rgo"?"RGO · Admin":"Shop Staff";
+  $("roleBadge").textContent=role==="rgo"?"RGO Administrator":"Shop Staff";
+  document.body.classList.toggle("shop-account",!isRgo);
   $("posLayout").classList.toggle("hidden",isRgo);
   $("rgoDashboard").classList.toggle("hidden",!isRgo);
   $("rgoSalesPeriod").classList.toggle("hidden",!isRgo);
@@ -705,6 +774,8 @@ function applyRole(role){
   const today=dateKey(new Date());
   $("salesReportDate").value=today;
   $("salesReportMonth").value=today.slice(0,7);
+  $("shopFinancialReportYear").value=String(new Date().getFullYear());
+  $("shopFinancialReportQuarter").value=String(Math.floor(new Date().getMonth()/3)+1);
   updateSalesPeriodControls();
   setVendorView("pos");
   renderInventory();
@@ -713,7 +784,7 @@ function applyRole(role){
     activateAdminView("home");
     renderAdminDashboard();
     renderDocuments();
-  }
+  }else renderShopFinancialReport();
 }
 function renderNotifications(){
   const notifications=[];
@@ -726,7 +797,7 @@ function renderNotifications(){
   if(latestSale){
     notifications.push({
       title:"Latest sale recorded",
-      message:`Receipt ${escapeHtml(latestSale.sale.id)} · ${escapeHtml(latestSale.shop.name)} · ${peso.format(latestSale.sale.total)} · ${new Date(latestSale.sale.date).toLocaleString("en-PH")}`
+      message:`Official receipt ${escapeHtml(latestSale.sale.id)} · ${escapeHtml(latestSale.shop.name)} · ${peso.format(latestSale.sale.total)} · ${new Date(latestSale.sale.date).toLocaleString("en-PH")}`
     });
   }
   $("notificationList").innerHTML=notifications.length
@@ -737,9 +808,8 @@ function renderShopSelector(){
   const selector=$("shopSelect");
   if(!selector)return;
   selector.innerHTML=`<option value="__all_shops__">All registered shops</option>`
-    +state.shops.filter(shop=>!shop.archived).map(shop=>`<option value="${escapeHtml(shop.id)}">${escapeHtml(shop.name)}</option>`).join("")
-    +`<option value="__add_shop__">＋ Add another shop</option>`;
-  selector.value=state.reportShopId;
+    +state.shops.filter(shop=>!shop.archived).map(shop=>`<option value="${escapeHtml(shop.id)}">${escapeHtml(shop.name)}</option>`).join("");
+  selector.value=state.shops.some(shop=>shop.id===state.reportShopId&&!shop.archived)?state.reportShopId:"__all_shops__";
   $("shopOverviewTitle").textContent=state.reportShopId==="__all_shops__"?"Consolidated Reports Overview":`${state.shops.find(shop=>shop.id===state.reportShopId)?.name||"Shop"} Reports Overview`;
   renderReportsOverview();
   renderAdminDashboard();
@@ -810,7 +880,7 @@ function renderAdminDashboard(){
     return `<article class="managed-shop-card"><div class="managed-shop-top"><span class="shop-monogram">${escapeHtml(shop.name.slice(0,1).toUpperCase())}</span><button type="button" class="shop-menu-button" data-rename-shop="${escapeHtml(shop.id)}" aria-label="Rename ${escapeHtml(shop.name)}">•••</button></div><h4>${escapeHtml(shop.name)}</h4><p>${shopProducts.length} registered product${shopProducts.length===1?"":"s"}</p><div class="managed-shop-meta"><span>${shopSales.length} sale${shopSales.length===1?"":"s"} today</span><span class="${alerts?"alert-text":"healthy-text"}">${alerts?`${alerts} stock alert${alerts===1?"":"s"}`:"Stock healthy"}</span></div><button type="button" class="shop-open-button" data-admin-shop="${escapeHtml(shop.id)}">View shop dashboard <span>→</span></button><button type="button" class="shop-archive-button" data-archive-shop="${escapeHtml(shop.id)}">Archive shop</button></article>`;
   }).join("")||`<div class="admin-empty">No shops have been added yet. Create a shop to start tracking sales and stock.</div>`;
   const activityRows=sales.slice().sort((a,b)=>new Date(b.sale.date)-new Date(a.sale.date)).slice(0,5);
-  $("adminReminderList").innerHTML=activityRows.length?activityRows.map(({shop,sale})=>`<article class="activity-row"><span class="activity-icon">↗</span><div><strong>Sale recorded · ${escapeHtml(shop.name)}</strong><p>Receipt ${escapeHtml(sale.id)} · ${sale.items.reduce((sum,item)=>sum+(Number(item.qty)||0),0)} items</p></div><span class="activity-amount">${peso.format(Number(sale.total)||0)}</span><time>${new Date(sale.date).toLocaleDateString("en-PH",{month:"short",day:"numeric"})}</time></article>`).join(""):`<div class="admin-empty compact-empty">No recent sales activity yet.</div>`;
+  $("adminReminderList").innerHTML=activityRows.length?activityRows.map(({shop,sale})=>`<article class="activity-row"><span class="activity-icon">↗</span><div><strong>Sale recorded · ${escapeHtml(shop.name)}</strong><p>Official receipt ${escapeHtml(sale.id)} · ${sale.items.reduce((sum,item)=>sum+(Number(item.qty)||0),0)} items</p></div><span class="activity-amount">${peso.format(Number(sale.total)||0)}</span><time>${new Date(sale.date).toLocaleDateString("en-PH",{month:"short",day:"numeric"})}</time></article>`).join(""):`<div class="admin-empty compact-empty">No recent sales activity yet.</div>`;
   renderSalesTrend(sales);
   renderPaymentReminders();
   document.querySelectorAll("[data-admin-shop]").forEach(button=>button.onclick=()=>selectShop(button.dataset.adminShop));
@@ -992,10 +1062,10 @@ function activateAdminView(view){
   const descriptions={
     home:["Overview","A clear view of sales and inventory across your campus shops."],
     sales:["Daily sales","Review transactions, receipts, and sold-product barcodes by date range."],
-    inventory:["Inventory monitoring","Compare physical counts with system stock and review RGO warnings."],
+    inventory:["Inventory monitoring","Compare physical counts with system stock and review unaccounted warnings."],
     reports:["Financial reports","Review quarterly statements, royalty totals, and payment reminders."],
-    documents:["Documents","Manage supporting purchase proofs, receipts, and other shop files."],
-    users:["User management","Create demo accounts and manage shop and administrator access."],
+    documents:["Documents","Manage proof of purchase, remittance documents, official receipts, and other shop files."],
+    users:["User management","Review registered accounts and their unique sign-in codes."],
     settings:["System settings","Configure inventory alert thresholds for this browser."]
   };
   if(!descriptions[view])return;
@@ -1014,26 +1084,9 @@ function renderAccounts(){
   table.innerHTML=accounts.length?accounts.map((account,index)=>{
     const isDefault=LOGIN_CREDENTIALS[account.role]?.username===account.username;
     const roleLabel=account.role==="rgo"?"Admin":"Shop Staff";
-    return `<tr><td>${escapeHtml(account.username)}</td><td><span class="user-role-chip ${account.role==="rgo"?"admin":"staff"}">${roleLabel}</span></td><td>${isDefault?"Demo account":"Registered locally"}</td><td>${isDefault?`<span class="report-help">Protected</span>`:`<button type="button" class="small-btn danger-text" data-remove-user="${index}">Remove</button>`}</td></tr>`;
-  }).join(""):`<tr><td colspan="4" class="table-empty-cell">No registered users.</td></tr>`;
+    return `<tr><td>${escapeHtml(account.username)}</td><td><code class="user-code-cell">${escapeHtml(account.userCode||"")}</code></td><td><span class="user-role-chip ${account.role==="rgo"?"admin":"staff"}">${roleLabel}</span></td><td>${isDefault?"Demo account":"Registered locally"}</td><td>${isDefault?`<span class="report-help">Protected</span>`:`<button type="button" class="small-btn danger-text" data-remove-user="${index}">Remove</button>`}</td></tr>`;
+  }).join(""):`<tr><td colspan="5" class="table-empty-cell">No registered users.</td></tr>`;
   document.querySelectorAll("[data-remove-user]").forEach(button=>button.onclick=()=>removeAccount(Number(button.dataset.removeUser)));
-}
-function createAccount(event){
-  event.preventDefault();
-  const username=$("userUsername").value.trim().toLowerCase();
-  const password=$("userPassword").value;
-  const role=$("userRole").value;
-  const message=$("userFormMessage");
-  message.textContent="";
-  if(username.length<3||password.length<6){message.textContent="Use a username with at least 3 characters and a password with at least 6.";return}
-  if(accounts.some(account=>account.role===role&&account.username===username)){message.textContent="That username already exists for this role.";return}
-  const account={role,username,password};
-  accounts.push(account);
-  try{localStorage.setItem(ACCOUNTS_STORAGE_KEY,JSON.stringify(accounts))}
-  catch(storageError){accounts.pop();console.error("Could not save the new user.",storageError);message.textContent="Could not save this account. Check browser storage.";return}
-  $("userForm").reset();
-  message.textContent="User created. Share the temporary password securely.";
-  renderAccounts();
 }
 function removeAccount(index){
   const account=accounts[index];
@@ -1174,7 +1227,7 @@ function renderDailySalesReport(reportShops){
     ["Gross margin",grossProfit===null||netSales===0?"—":`${(grossProfit/netSales*100).toFixed(1)}%`]
   ]);
   $("dailyReportTransactions").innerHTML=rows([
-    ["Transactions (receipts)",receiptCount],
+    ["Transactions (official receipts)",receiptCount],
     ["Units sold",units],
     ["Average transaction value",peso.format(averageSale)],
     ["Units per transaction",receiptCount?(units/receiptCount).toFixed(2):"0.00"],
@@ -1290,6 +1343,12 @@ function renderQuarterlySalesReport(reportShops,reportYear,quarter,quarterStartM
   const quarterLabel=`Q${quarter} ${reportYear} · ${startLabel} – ${endLabel}`;
   $("quarterlyReportCaption").textContent=quarterLabel;
   $("quarterlyCaption").textContent=quarterLabel;
+  const paymentDates=paymentReminders
+    .filter(reminder=>reportShops.some(shop=>shop.id===reminder.shopId)&&reminder.paidAt)
+    .map(reminder=>new Date(reminder.paidAt))
+    .filter(date=>Number.isFinite(date.getTime())&&dateKey(date)>=`${quarterStart}-01`&&dateKey(date)<=`${quarterEnd}-31`)
+    .sort((a,b)=>b-a);
+  $("royaltyPaymentDate").textContent=`Royalty payment date: ${paymentDates[0]?paymentDates[0].toLocaleDateString("en-PH",{year:"numeric",month:"long",day:"numeric"}):"Not recorded"}`;
   $("quarterlyMtdReport").innerHTML=monthly.map(row=>`<tr><td>${escapeHtml(row.month)}</td><td>${peso.format(row.gross)}</td><td>${peso.format(row.net)}</td><td>${peso.format(row.royalty)}</td></tr>`).join("")+`<tr class="daily-report-total"><th>Quarter total</th><th>${peso.format(quarterGross)}</th><th>${peso.format(quarterNet)}</th><th>${peso.format(royalty)}</th></tr>`;
   $("quarterlyGrossReport").innerHTML=[
     ["Reporting period",quarterLabel],
@@ -1412,11 +1471,11 @@ function renderReportsOverview(){
         ?unaccountedUnits.map(unit=>`<code class="barcode-cell" title="${unit.systemTracked===false?"Extra physical unit not in system stock":"Missing expected unit"}">${escapeHtml(unit.barcode)}</code>`).join(" ")
         :"—";
       const lastUpdated=product.updatedAt?new Date(product.updatedAt).toLocaleDateString("en-PH",{year:"numeric",month:"short",day:"numeric"}):"—";
-      return `<tr class="${unaccounted?"unaccounted-row":""}"><td>${escapeHtml(shop.name)}</td><td>PRD-${escapeHtml(product.id.slice(-6).toUpperCase())}</td><td><code class="barcode-cell">${escapeHtml(product.barcode||"—")}</code></td><td>${escapeHtml(product.name)}</td><td>${escapeHtml(product.category)}</td><td>${stock}</td><td>${actualStock}</td><td><span class="inventory-status ${unaccounted?"unaccounted":stock===0?"out":"in"}">${unaccounted?"⚠ RGO · ":""}${status}</span></td><td>${unaccountedBarcodes}</td><td>${lastUpdated}</td><td>${soldByShop.get(shop.id)?.get(product.id)||soldByShop.get(shop.id)?.get(product.name)||0}</td><td>${peso.format(Number(product.price)||0)}</td><td>${peso.format(stock*(Number(product.price)||0))}</td></tr>`;
+      return `<tr class="${unaccounted?"unaccounted-row":""}"><td>${escapeHtml(shop.name)}</td><td>PRD-${escapeHtml(product.id.slice(-6).toUpperCase())}</td><td><code class="barcode-cell">${escapeHtml(product.barcode||"—")}</code></td><td>${escapeHtml(product.name)}</td><td>${escapeHtml(product.category)}</td><td>${stock}</td><td>${actualStock}</td><td>${unaccounted?'<span class="inventory-warning" aria-label="Warning">⚠</span>':""}<span class="inventory-status ${unaccounted?"unaccounted":stock===0?"out":"in"}">${status}</span></td><td>${unaccountedBarcodes}</td><td>${lastUpdated}</td><td>${soldByShop.get(shop.id)?.get(product.id)||soldByShop.get(shop.id)?.get(product.name)||0}</td><td>${peso.format(Number(product.price)||0)}</td><td>${peso.format(stock*(Number(product.price)||0))}</td></tr>`;
     }).join("")
     :`<tr><td colspan="13">No inventory records for these shops.</td></tr>`;
   $("supportingDocumentsReport").innerHTML=receipts.length
-    ?receipts.map(({shop,sale})=>`<tr><td>${escapeHtml(shop.name)}</td><td>${escapeHtml(sale.id)}</td><td>${new Date(sale.date).toLocaleString("en-PH")}</td><td>${escapeHtml(sale.paymentMethod||"")}</td><td>${peso.format(Number(sale.total)||0)}</td><td><button class="small-btn" data-report-receipt="${escapeHtml(shop.id)}|${escapeHtml(sale.id)}">View receipt</button></td></tr>`).join("")
+    ?receipts.map(({shop,sale})=>`<tr><td>${escapeHtml(shop.name)}</td><td>${escapeHtml(sale.id)}</td><td>${new Date(sale.date).toLocaleString("en-PH")}</td><td>${escapeHtml(sale.paymentMethod||"")}</td><td>${peso.format(Number(sale.total)||0)}</td><td><button class="small-btn" data-report-receipt="${escapeHtml(shop.id)}|${escapeHtml(sale.id)}">View official receipt</button></td></tr>`).join("")
     :`<tr><td colspan="6">No supporting receipts for this date.</td></tr>`;
   document.querySelectorAll("[data-report-receipt]").forEach(button=>button.onclick=()=>{
     const [shopId,saleId]=button.dataset.reportReceipt.split("|");
@@ -1523,7 +1582,7 @@ function downloadDailySalesExcel(){
   ];
   const barcodeRows=[
     ["Products sold by barcode"],["Date range",from,to],[],
-    ["Date","Shop","Receipt","Sold barcode","Product","Quantity","Amount"],
+    ["Date","Shop","Official receipt","Sold barcode","Product","Quantity","Amount"],
     ...sales.flatMap(({shop,sale})=>sale.items.flatMap(item=>{
       const product=shop.products.find(entry=>entry.id===item.productId);
       const categoryBarcode=item.categoryBarcodePrefix||product?.categoryBarcodePrefix||item.barcode||product?.barcode||"";
@@ -1535,8 +1594,8 @@ function downloadDailySalesExcel(){
     }))
   ];
   const receiptRows=[
-    ["Supporting receipts"],["Date range",from,to],[],
-    ["Shop","Receipt","Date","Payment method","Actual sales"],
+    ["Official receipts"],["Date range",from,to],[],
+    ["Shop","Official receipt","Date","Payment method","Actual sales"],
     ...sales.map(({shop,sale})=>[shop.name,sale.id,new Date(sale.date).toLocaleString("en-PH"),sale.paymentMethod||"",Number(sale.total)||0])
   ];
   const xmlEscape=value=>String(value??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&apos;");
@@ -1544,7 +1603,7 @@ function downloadDailySalesExcel(){
     const numeric=typeof value==="number"&&Number.isFinite(value);
     return `<Cell><Data ss:Type="${numeric?"Number":"String"}">${xmlEscape(value)}</Data></Cell>`;
   }).join("")}</Row>`).join("")}</Table></Worksheet>`;
-  const workbook=`<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">${worksheet("Sales by Shop",salesRows)}${worksheet("Sold Barcodes",barcodeRows)}${worksheet("Receipts",receiptRows)}</Workbook>`;
+  const workbook=`<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">${worksheet("Sales by Shop",salesRows)}${worksheet("Sold Barcodes",barcodeRows)}${worksheet("Official Receipts",receiptRows)}</Workbook>`;
   const blob=new Blob(["\uFEFF",workbook],{type:"application/vnd.ms-excel;charset=utf-8"});
   const url=URL.createObjectURL(blob);
   const link=document.createElement("a");
@@ -1677,7 +1736,7 @@ function updateLoginTabs(){
   $("loginSubmit").innerHTML=isSignup?"Create account <span aria-hidden=\"true\">→</span>":"Log in <span aria-hidden=\"true\">→</span>";
   $("forgotPasswordBtn").classList.toggle("hidden",isSignup);
   $("demoCredentials").classList.toggle("hidden",isSignup);
-  $("demoCredentials").textContent=isShop?"Demo: shopowner / owner123":"Demo: admin / admin123";
+  $("demoCredentials").textContent=isShop?"Demo: shopowner / owner123 · Code: PUP-SOUVENIR-01":"Demo: admin / admin123 · Code: PUP-RGO-01";
   $("authModeToggle").textContent=isSignup?"Back to log in":`Create ${isShop?"a":"an"} ${roleName} account`;
   document.querySelectorAll("[data-auth-tab]").forEach(button=>{
     const active=button.dataset.authTab===(isShop?"vendor":"admin");
@@ -1690,19 +1749,27 @@ function updateLoginTabs(){
 function handleLoginSubmit(event){
   event.preventDefault();
   const username=$("loginUsername").value.trim().toLowerCase();
+  const userCode=$("loginUserCode").value.trim().toUpperCase();
   const password=$("loginPassword").value;
   const error=$("loginError");
   const showError=message=>{error.textContent=message;error.classList.remove("hidden")};
-  if(!username||!password){showError("Enter your email or username and password.");return}
+  if(!username||!password||!userCode){showError("Enter your username, unique user code, and password.");return}
+  if(authMode!=="signup"&&!accounts.some(account=>account.role===selectedAuthRole&&account.username===username&&account.userCode===userCode)){
+    showError("Incorrect username, unique user code, or password. Please try again.");
+    $("loginUserCode").value="";
+    $("loginUserCode").focus();
+    return;
+  }
   if(authMode==="signup"){
     if(username.length<3){showError("Use at least 3 characters for your email or username.");return}
     if(password.length<6){showError("Use a password with at least 6 characters.");return}
     if(password!==$("confirmPassword").value){showError("Your passwords do not match.");return}
+    if(accounts.some(account=>account.userCode===userCode)){showError("That unique user code is already assigned. Use a different code.");return}
     if(accounts.some(account=>account.role===selectedAuthRole&&account.username===username)){
       showError("That email or username is already registered for this account type.");
       return;
     }
-    accounts.push({role:selectedAuthRole,username,password});
+    accounts.push({role:selectedAuthRole,username,password,userCode});
     try{
       localStorage.setItem(ACCOUNTS_STORAGE_KEY,JSON.stringify(accounts));
     }catch(storageError){
@@ -1718,6 +1785,7 @@ function handleLoginSubmit(event){
     return;
   }
   $("loginUsername").value="";
+  $("loginUserCode").value="";
   $("loginPassword").value="";
   $("confirmPassword").value="";
   applyRole(selectedAuthRole);
@@ -1725,6 +1793,7 @@ function handleLoginSubmit(event){
 document.querySelectorAll("[data-auth-tab]").forEach(button=>button.onclick=()=>{
   selectedAuthRole=button.dataset.authTab==="vendor"?"souvenir":"rgo";
   $("loginUsername").value="";
+  $("loginUserCode").value="";
   $("loginPassword").value="";
   $("confirmPassword").value="";
   updateLoginTabs();
@@ -1732,6 +1801,7 @@ document.querySelectorAll("[data-auth-tab]").forEach(button=>button.onclick=()=>
 $("authModeToggle").onclick=()=>{
   authMode=authMode==="login"?"signup":"login";
   $("loginUsername").value="";
+  $("loginUserCode").value="";
   $("loginPassword").value="";
   $("confirmPassword").value="";
   updateLoginTabs();
@@ -1743,7 +1813,6 @@ $("downloadFinancialReport").onclick=()=>downloadReportCsv("quarterlyFinancialRe
 $("downloadDailySalesExcel").onclick=downloadDailySalesExcel;
 document.querySelectorAll("[data-admin-view]").forEach(button=>button.onclick=()=>activateAdminView(button.dataset.adminView));
 ["sidebarAddShop","overviewAddShop"].forEach(id=>$(id).onclick=()=>selectShop("__add_shop__"));
-$("adminNotifications").onclick=()=>{renderNotifications();openModal("notificationModal")};
 $("documentsBtn").onclick=()=>{renderDocuments("staff");openModal("staffDocumentsModal")};
 $("openSalesHistory").onclick=()=>{renderSales();openModal("salesModal")};
 $("manageShopInventory").onclick=()=>{if(state.reportShopId==="__all_shops__"){showToast("Select a shop before managing its products");return}renderInventory();openModal("inventoryModal")};
@@ -1757,7 +1826,6 @@ $("paymentReminderForm").onsubmit=addPaymentReminder;
 $("documentFile").onchange=event=>{saveUploadedDocument(event.target.files[0],$("documentCategory").value);event.target.value=""};
 $("staffDocumentFile").onchange=event=>{saveUploadedDocument(event.target.files[0],$("staffDocumentCategory").value);event.target.value=""};
 $("documentCategoryFilter").onchange=()=>renderDocuments("admin");
-$("userForm").onsubmit=createAccount;
 $("settingsForm").onsubmit=saveSettings;
 $("lowStockThreshold").value=String(lowStockThreshold);
 $("financialReportYear").value=String(new Date().getFullYear());
