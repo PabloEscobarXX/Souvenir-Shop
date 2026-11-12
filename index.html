@@ -22,6 +22,8 @@
         <div id="loginRoleHint" class="login-role-hint">Shop account</div>
         <label for="loginUsername">Email or username</label>
         <input id="loginUsername" name="username" type="text" autocomplete="username" placeholder="Enter your email or username" required />
+        <label for="loginUserCode">Unique user code</label>
+        <input id="loginUserCode" name="userCode" type="password" autocomplete="off" placeholder="Enter your unique user code" required />
         <label for="loginPassword">Password</label>
         <input id="loginPassword" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required />
         <button id="forgotPasswordBtn" class="forgot-password" type="button">Forgot password?</button>
@@ -80,7 +82,6 @@
           <div><span class="eyebrow">RESOURCE GENERATION OFFICE</span><h2 id="adminPageTitle">Overview</h2><p id="adminPageDescription">A clear view of sales and inventory across your campus shops.</p></div>
           <div class="admin-heading-actions">
             <label class="shop-selector admin-shop-filter"><span class="visually-hidden">Filter by shop</span><select id="shopSelect" aria-label="Filter dashboard by shop"></select></label>
-            <button type="button" class="admin-icon-button" id="adminNotifications" aria-label="View notifications">♧<span class="notification-dot"></span></button>
             <span class="admin-user-avatar" aria-label="RGO administrator">RA</span>
           </div>
         </div>
@@ -138,11 +139,11 @@
           </section>
           <section class="admin-card admin-table-card">
             <div class="admin-card-heading"><div><h3>Products sold by barcode</h3><p>Product barcodes and quantities included in sales for this date range.</p></div></div>
-            <div class="table-wrap"><table><thead><tr><th>Date</th><th>Shop</th><th>Receipt</th><th>Barcode</th><th>Product</th><th>Quantity</th><th>Amount</th></tr></thead><tbody id="dailySalesBarcodes"></tbody></table></div>
+            <div class="table-wrap"><table><thead><tr><th>Date</th><th>Shop</th><th>Official receipt</th><th>Barcode</th><th>Product</th><th>Quantity</th><th>Amount</th></tr></thead><tbody id="dailySalesBarcodes"></tbody></table></div>
           </section>
           <section class="admin-card admin-table-card">
-            <div class="admin-card-heading"><div><h3>Supporting receipts</h3><p>Transaction receipts for the selected date range.</p></div></div>
-            <div class="table-wrap"><table><thead><tr><th>Shop</th><th>Receipt</th><th>Date</th><th>Payment</th><th>Total</th><th></th></tr></thead><tbody id="supportingDocumentsReport"></tbody></table></div>
+            <div class="admin-card-heading"><div><h3>Official receipts</h3><p>Transaction official receipts for the selected date range.</p></div></div>
+            <div class="table-wrap"><table><thead><tr><th>Shop</th><th>Official receipt</th><th>Date</th><th>Payment</th><th>Total</th><th></th></tr></thead><tbody id="supportingDocumentsReport"></tbody></table></div>
           </section>
         </section>
 
@@ -151,10 +152,10 @@
             <article class="admin-stat"><div class="stat-top"><span>Products in stock</span><span class="stat-icon green">✓</span></div><strong id="dashInStock">0</strong><small>Available for sale</small></article>
             <article class="admin-stat"><div class="stat-top"><span>Low stock alerts</span><span class="stat-icon amber">!</span></div><strong id="dashLowStock">0</strong><small>5 units or fewer</small></article>
             <article class="admin-stat"><div class="stat-top"><span>Out of stock</span><span class="stat-icon burgundy">×</span></div><strong id="dashOutStock">0</strong><small>Restock recommended</small></article>
-            <article class="admin-stat"><div class="stat-top"><span>Unaccounted</span><span class="stat-icon amber">⚠</span></div><strong id="dashUnaccounted">0</strong><small>RGO follow-up required</small></article>
+            <article class="admin-stat"><div class="stat-top"><span>Unaccounted</span><span class="stat-icon amber">⚠</span></div><strong id="dashUnaccounted">0</strong><small>Needs review</small></article>
           </div>
           <section class="admin-card admin-table-card">
-            <div class="admin-card-heading"><div><h3>Inventory monitoring</h3><p>Compare system stock with each shop’s actual physical count. Unaccounted differences require RGO follow-up.</p></div><div class="report-actions"><button class="secondary" id="manageShopInventory" type="button">Manage selected shop</button><button class="secondary" id="downloadInventoryReport" type="button">Download CSV</button></div></div>
+            <div class="admin-card-heading"><div><h3>Inventory monitoring</h3><p>Compare system stock with each shop’s actual physical count. Review unaccounted differences separately.</p></div><div class="report-actions"><button class="secondary" id="manageShopInventory" type="button">Manage selected shop</button><button class="secondary" id="downloadInventoryReport" type="button">Download CSV</button></div></div>
             <div class="table-wrap"><table><thead><tr><th>Shop</th><th>Product ID</th><th>Barcode</th><th>Product</th><th>Category</th><th>System stock</th><th>Actual count</th><th>Status</th><th>Unaccounted unit barcodes</th><th>Last updated</th><th>Units sold</th><th>Unit price</th><th>Stock value</th></tr></thead><tbody id="shopInventoryReport"></tbody></table></div>
           </section>
         </section>
@@ -165,13 +166,13 @@
           </section>
           <section class="daily-sales-report-sheet quarterly-sales-report-sheet" id="quarterlySalesReportSheet" aria-label="Quarterly sales report">
             <header class="daily-report-header">
-              <div class="daily-report-title"><h2>QUARTERLY SALES REPORT</h2><p id="quarterlyReportCaption">Selected quarter</p><p>Royalty rate: 5%</p><p>Amounts in PHP</p></div>
+              <div class="daily-report-title"><h2>QUARTERLY SALES REPORT</h2><p id="quarterlyReportCaption">Selected quarter</p><p id="royaltyPaymentDate">Royalty payment date: Not recorded</p><p>Royalty rate: 5%</p><p>Amounts in PHP</p></div>
             </header>
             <div class="daily-report-grid">
               <section class="daily-report-section"><h3>Monthly sales breakdown</h3><table><thead><tr><th>Month</th><th>Gross sales</th><th>Net sales</th><th>Royalty · 5%</th></tr></thead><tbody id="quarterlyMtdReport"></tbody></table></section>
               <section class="daily-report-section"><h3>Quarter gross sales · 3 months</h3><table><tbody id="quarterlyGrossReport"></tbody></table></section>
               <section class="daily-report-section"><h3>Sales by category</h3><table><thead><tr><th>Category</th><th>Units</th><th>Net sales</th><th>Share</th></tr></thead><tbody id="quarterlyCategoryReport"></tbody></table></section>
-              <section class="daily-report-section"><h3>Payment method</h3><table><thead><tr><th>Method</th><th>Receipts</th><th>Net sales</th><th>Share</th></tr></thead><tbody id="quarterlyPaymentReport"></tbody></table></section>
+              <section class="daily-report-section"><h3>Payment method</h3><table><thead><tr><th>Method</th><th>Official receipts</th><th>Net sales</th><th>Share</th></tr></thead><tbody id="quarterlyPaymentReport"></tbody></table></section>
             </div>
             <footer class="daily-report-signatures"><span>Prepared by: __________________　 Signature: __________________</span><span>Reviewed by: __________________　 Signature: __________________</span></footer>
           </section>
@@ -203,31 +204,21 @@
 
         <section class="admin-view" data-admin-panel="documents">
           <section class="admin-card document-upload-card">
-            <div><span class="stat-icon burgundy">↥</span><h3>Supporting documents</h3><p>Store proof of purchase, payment receipts, and other shop documents in this browser.</p></div>
-            <div class="document-upload-actions"><label for="documentCategory" class="visually-hidden">Document category</label><select id="documentCategory"><option>Proof of Purchase</option><option>Payment Receipts</option><option>Sales Receipts</option><option>Other Documents</option></select><label class="upload-button" for="documentFile">＋ Upload document</label></div>
+            <div><span class="stat-icon burgundy">↥</span><h3>Supporting documents</h3><p>Store proof of purchase, remittance documents, official receipts, and other shop documents in this browser.</p></div>
+            <div class="document-upload-actions"><label for="documentCategory" class="visually-hidden">Document category</label><select id="documentCategory"><option>Proof of Purchase</option><option>Remittance Documents</option><option>Official Receipts</option><option>Other Documents</option></select><label class="upload-button" for="documentFile">＋ Upload document</label></div>
             <input id="documentFile" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx" class="visually-hidden" />
           </section>
           <section class="admin-card admin-table-card">
-            <div class="admin-card-heading"><div><h3>Document library</h3><p>PDF, JPG, PNG, and DOCX · 2 MB maximum per file, stored in this browser.</p></div><label class="document-filter-label" for="documentCategoryFilter">Category</label><select id="documentCategoryFilter"><option value="all">All documents</option><option>Proof of Purchase</option><option>Payment Receipts</option><option>Sales Receipts</option><option>Other Documents</option></select></div>
+            <div class="admin-card-heading"><div><h3>Document library</h3><p>PDF, JPG, PNG, and DOCX · 2 MB maximum per file, stored in this browser.</p></div><label class="document-filter-label" for="documentCategoryFilter">Category</label><select id="documentCategoryFilter"><option value="all">All documents</option><option>Proof of Purchase</option><option>Remittance Documents</option><option>Official Receipts</option><option>Other Documents</option></select></div>
             <div class="table-wrap"><table><thead><tr><th>File name</th><th>Category</th><th>Date uploaded</th><th>Shop</th><th>Actions</th></tr></thead><tbody id="documentsTable"></tbody></table></div>
           </section>
         </section>
 
         <section class="admin-view" data-admin-panel="users">
-          <section class="admin-card">
-            <div class="admin-card-heading"><div><h3>Add a system user</h3><p>Create a demo account and choose its access role.</p></div></div>
-            <form id="userForm" class="user-form">
-              <div><label for="userUsername">Email or username</label><input id="userUsername" required minlength="3" autocomplete="off" placeholder="e.g. shopstaff" /></div>
-              <div><label for="userPassword">Temporary password</label><input id="userPassword" type="password" required minlength="6" autocomplete="new-password" placeholder="At least 6 characters" /></div>
-              <div><label for="userRole">Role</label><select id="userRole"><option value="souvenir">Shop Staff</option><option value="rgo">Admin</option></select></div>
-              <button type="submit" class="primary">Create user</button>
-              <p id="userFormMessage" class="user-form-message" role="status"></p>
-            </form>
-          </section>
           <section class="admin-card admin-table-card">
-            <div class="admin-card-heading"><div><h3>Registered users</h3><p>Demo account list · passwords are never displayed here.</p></div></div>
-            <div class="table-wrap"><table><thead><tr><th>Username</th><th>Role</th><th>Account type</th><th>Actions</th></tr></thead><tbody id="usersTable"></tbody></table></div>
-            <p class="report-help">This prototype stores demo credentials in browser storage. Use a secure backend for real accounts and access control.</p>
+            <div class="admin-card-heading"><div><h3>Registered users</h3><p>Unique user codes are required at sign-in. Do not share a code with other shop accounts.</p></div></div>
+            <div class="table-wrap"><table><thead><tr><th>Username</th><th>Unique user code</th><th>Role</th><th>Account type</th><th>Actions</th></tr></thead><tbody id="usersTable"></tbody></table></div>
+            <p class="report-help">This prototype stores account codes and credentials in browser storage. Use a secure backend for real accounts and access control.</p>
           </section>
         </section>
 
@@ -271,6 +262,7 @@
         <div class="vendor-tabs" role="tablist" aria-label="Shop tools">
           <button class="vendor-tab active" id="posTab" type="button" role="tab" aria-selected="true" aria-controls="posView">Point of Sale</button>
           <button class="vendor-tab" id="registeredProductsTab" type="button" role="tab" aria-selected="false" aria-controls="registeredProductsView">Registered Products <span id="registeredProductsCount">0</span></button>
+          <button class="vendor-tab" id="shopFinancialReportsTab" type="button" role="tab" aria-selected="false" aria-controls="shopFinancialReportsView">Financial Reports</button>
         </div>
 
         <div id="posView" class="vendor-view active" role="tabpanel" aria-labelledby="posTab">
@@ -303,6 +295,19 @@
           <div class="registered-products-search"><span aria-hidden="true">⌕</span><label for="registeredProductSearch" class="visually-hidden">Search registered products</label><input id="registeredProductSearch" type="search" placeholder="Search name, category, or barcode..." /></div>
           <div class="table-wrap registered-products-table"><table><thead><tr><th>Catalog barcode</th><th>Product</th><th>Category</th><th>Price</th><th>System stock</th><th>Actual count</th><th>Status</th><th>Actions</th></tr></thead><tbody id="registeredProductsTable"></tbody></table></div>
           <p class="registered-products-note">Catalog codes identify products (Magnets A00000, Keychains B00000, Decor C00000, etc.). Each stocked unit has its own sequential barcode, such as A000001, A000002. Scan the unit barcode at checkout; mark missing unit labels as Unaccounted in Inventory so RGO can review the exact code.</p>
+        </section>
+
+        <section id="shopFinancialReportsView" class="vendor-view shop-financial-reports-view" role="tabpanel" aria-labelledby="shopFinancialReportsTab" hidden>
+          <div class="registered-products-heading"><div><h3>Quarterly financial statement</h3><p>Your shop’s sales, discounts, net sales, and royalty summary.</p></div></div>
+          <div class="shop-report-controls">
+            <label for="shopFinancialReportYear">Year<input id="shopFinancialReportYear" type="number" min="2000" max="2100" step="1" /></label>
+            <label for="shopFinancialReportQuarter">Quarter<select id="shopFinancialReportQuarter"><option value="1">1st Quarter</option><option value="2">2nd Quarter</option><option value="3">3rd Quarter</option><option value="4">4th Quarter</option></select></label>
+          </div>
+          <section class="daily-sales-report-sheet quarterly-sales-report-sheet shop-quarterly-report-sheet" aria-label="Shop quarterly financial statement">
+            <header class="daily-report-header"><div class="daily-report-title"><h2>QUARTERLY FINANCIAL STATEMENT</h2><p id="shopQuarterlyReportCaption">Selected quarter</p><p id="shopRoyaltyPaymentDate">Royalty payment date: Not recorded</p><p>Amounts in PHP</p></div></header>
+            <div class="table-wrap"><table><thead><tr><th>Month</th><th>Gross sales</th><th>Discounts</th><th>Net sales</th><th>Royalty · 5%</th></tr></thead><tbody id="shopQuarterlyFinancialReport"></tbody></table></div>
+            <div class="table-wrap"><table><tbody id="shopQuarterlyTotals"></tbody></table></div>
+          </section>
         </section>
       </section>
 
@@ -343,14 +348,12 @@
           <label>Payment Method</label>
           <div class="payment-methods">
             <button class="pay-method active" data-method="Cash">💵 Cash</button>
-            <button class="pay-method" data-method="GCash">📱 GCash</button>
-            <button class="pay-method" data-method="Maya">🟢 Maya</button>
+            <button class="pay-method" data-method="QRPH">▦ QRPH</button>
             <button class="pay-method" data-method="Card">💳 Card</button>
           </div>
           <select id="paymentMethod" class="hidden-select">
             <option value="Cash">Cash</option>
-            <option value="GCash">GCash</option>
-            <option value="Maya">Maya</option>
+            <option value="QRPH">QRPH</option>
             <option value="Card">Card</option>
           </select>
 
@@ -398,7 +401,7 @@
   <div id="staffDocumentsModal" class="modal hidden">
     <div class="modal-card large">
       <div class="modal-header"><div><span class="eyebrow">SHOP WORKSPACE</span><h2>Supporting documents</h2></div><button class="icon-btn" data-close="staffDocumentsModal" type="button">✕</button></div>
-      <div class="staff-document-upload"><label for="staffDocumentCategory">Category</label><select id="staffDocumentCategory"><option>Proof of Purchase</option><option>Payment Receipts</option><option>Sales Receipts</option><option>Other Documents</option></select><label class="upload-button" for="staffDocumentFile">＋ Upload document</label><input id="staffDocumentFile" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx" class="visually-hidden" /></div>
+      <div class="staff-document-upload"><label for="staffDocumentCategory">Category</label><select id="staffDocumentCategory"><option>Proof of Purchase</option><option>Remittance Documents</option><option>Official Receipts</option><option>Other Documents</option></select><label class="upload-button" for="staffDocumentFile">＋ Upload document</label><input id="staffDocumentFile" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx" class="visually-hidden" /></div>
       <p class="report-help">PDF, JPG, PNG, and DOCX · 2 MB maximum per file. Documents are stored in this browser.</p>
       <div class="table-wrap"><table><thead><tr><th>File name</th><th>Category</th><th>Date uploaded</th><th>Actions</th></tr></thead><tbody id="staffDocumentsTable"></tbody></table></div>
     </div>
@@ -457,14 +460,9 @@
         <input id="salesReportMonth" type="month" class="hidden" />
       </div>
 
-      <div class="sales-summary">
-        <div class="summary-card"><span>Total Transactions</span><strong id="salesCount">0</strong><small id="salesCountCaption">Completed sales</small></div>
-        <div class="summary-card"><span>Total Revenue</span><strong id="salesRevenue">₱0.00</strong><small id="salesRevenueCaption">All-time revenue</small></div>
-      </div>
-
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Receipt</th><th>Date</th><th>Items</th><th>Sold barcodes</th><th>Payment</th><th>Total</th><th></th></tr></thead>
+          <thead><tr><th>Official receipt</th><th>Date</th><th>Items</th><th>Sold barcodes</th><th>Payment</th><th>Total</th><th></th></tr></thead>
           <tbody id="salesTable"></tbody>
         </table>
       </div>
@@ -474,11 +472,11 @@
   <div id="receiptModal" class="modal hidden">
     <div class="modal-card receipt-card">
       <div class="modal-header no-print">
-        <div><span class="eyebrow">TRANSACTION COMPLETE</span><h2>Receipt</h2></div>
+      <div><span class="eyebrow">TRANSACTION COMPLETE</span><h2>Official Receipt</h2></div>
         <button class="icon-btn" data-close="receiptModal">✕</button>
       </div>
       <div id="receiptContent"></div>
-      <button id="printReceiptBtn" class="checkout-btn no-print">Print / Save Receipt as PDF 🖨️</button>
+      <button id="printReceiptBtn" class="checkout-btn no-print">Print / Save Official Receipt as PDF 🖨️</button>
     </div>
   </div>
 
